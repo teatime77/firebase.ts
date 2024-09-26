@@ -89,7 +89,7 @@ export async function SignOut(){
     msg("sign out done");
 }
 
-export function OnDOMContentLoadedfunction() {
+export function initFirebase() {
     setEvent();
 
     // Your web app's Firebase configuration

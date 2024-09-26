@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<meta charset="utf-8">
+</head>
+<body>
+<dialog id="firebase-menu">
+    <button onclick="firebase_ts.SignUp()" >Sign up</button>
+    <button onclick="firebase_ts.SignIn()">Sign In</button>
+    <button onclick="firebase_ts.SignOut()" >Sign out</button>
+    <button onclick="firebase_ts.writeTest()">write test</button>
+    <button onclick="firebase_ts.showFileDlg()">file</button>    
+</dialog>
+
+<dialog id="sign-up">
+    <form>
+        <h3>Sign Up</h3>
+        e-mail   <input id="sign-up-e-mail" type="email" autocomplete="email" /><br/>
+        password <input id="sign-up-password" type="password" autocomplete="new-password" /><br/>
+        <button onclick="firebase_ts.SignUpOk()">Ok</button> 
+        <button onclick="$('sign-up').close()" >Cancel</button>
+    </form>
+</dialog>
+
+<dialog id="sign-in">
+    <!-- <form> -->
+        <h3>Sign In</h3>
+        e-mail   <input id="sign-in-e-mail" type="email" autocomplete="email" /><br/>
+        password <input id="sign-in-password" type="password" autocomplete="current-password" /><br/>
+        <button onclick="firebase_ts.SignInOk()">Ok</button> 
+        <button onclick="firebase_ts.resetPassword()">Reset</button>
+        <button onclick="$('sign-in').close()">Cancel</button>
+    <!-- </form> -->
+</dialog>
+
+<dialog id="add-dbitem">
+    <button id="add-folder">add folder</button><br/>
+    <button id="add-doc">add document</button>
+</dialog>
+
+<dialog id="file-dlg">
+    <div id="file-div" style="width: 640px; height: 640px; border-style: ridge;">
+    </div>
+</dialog>
+
+
+</body>
+</html>
