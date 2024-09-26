@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Welcome to Firebase Hosting</title>
+
+<!-- update the version number as needed -->
+<script defer src="/__/firebase/10.13.2/firebase-app-compat.js"></script>
+<!-- include only the Firebase features as you need -->
+<script defer src="/__/firebase/10.13.2/firebase-auth-compat.js"></script>
+<script defer src="/__/firebase/10.13.2/firebase-firestore-compat.js"></script>
+<script defer src="/__/firebase/10.13.2/firebase-analytics-compat.js"></script>
+<!-- 
+    initialize the SDK after all desired features are loaded, set useEmulator to false
+    to avoid connecting the SDK to running emulators.
+  -->
+<script defer src="/__/firebase/init.js?useEmulator=false"></script>
+
+<script src="https://www.gstatic.com/firebasejs/ui/6.0.1/firebase-ui-auth.js"></script>
+<link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/6.0.1/firebase-ui-auth.css" />
+
+<script type="text/javascript" src="js/firebase.js"></script>
+
+<script>
+
+
+</script>
+</head>
+
+<body>
+<button onclick="firebase_ts.SignUp()" >Sign up</button>
+<button onclick="firebase_ts.SignIn()">Sign In</button>
+<button onclick="firebase_ts.SignOut()" >Sign out</button>
+<button onclick="firebase_ts.writeTest()">write test</button>
+<button onclick="firebase_ts.showFileDlg()">file</button>
+<div id="firebaseui-auth-container"></div>
+
+
+<dialog id="sign-up">
+    <form>
+        <h3>Sign Up</h3>
+        e-mail   <input id="sign-up-e-mail" type="email" autocomplete="email" /><br/>
+        password <input id="sign-up-password" type="password" autocomplete="new-password" /><br/>
+        <button onclick="firebase_ts.SignUpOk()">Ok</button> 
+        <button onclick="$('sign-up').close()" >Cancel</button>
+    </form>
+</dialog>
+
+
+<dialog id="sign-in">
+    <!-- <form> -->
+        <h3>Sign In</h3>
+        e-mail   <input id="sign-in-e-mail" type="email" autocomplete="email" /><br/>
+        password <input id="sign-in-password" type="password" autocomplete="current-password" /><br/>
+        <button onclick="firebase_ts.SignInOk()">Ok</button> 
+        <button onclick="firebase_ts.resetPassword()">Reset</button>
+        <button onclick="$('sign-in').close()">Cancel</button>
+    <!-- </form> -->
+</dialog>
+
+<dialog id="add-dbitem">
+    <button id="add-folder">add folder</button><br/>
+    <button id="add-doc">add document</button>
+</dialog>
+
+<dialog id="file-dlg">
+    <div id="file-div" style="width: 640px; height: 640px; border-style: ridge;">
+    </div>
+</dialog>
+
+<script>
+document.addEventListener('DOMContentLoaded', firebase_ts.OnDOMContentLoadedfunction );
+</script>
+</body>
+
+</html>
