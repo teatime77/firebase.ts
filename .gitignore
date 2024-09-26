@@ -8,4 +8,4 @@ firestore.indexes.json
 firestore.rules
 package-lock.json
 package.json
-public/js
+public/lib/firebase/js
