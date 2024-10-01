@@ -37,5 +37,4 @@ export function $dlg(id : string) : HTMLDialogElement {
     return $(id) as HTMLDialogElement;
 }
 
-
 }

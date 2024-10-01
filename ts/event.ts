@@ -1,12 +1,10 @@
 namespace firebase_ts {
 //
-let parent : Folder | null;
 
 export function setEvent(){
     $("file-div").addEventListener("contextmenu", (ev:MouseEvent)=>{
         ev.preventDefault();
 
-        parent = null;
         $dlg("add-dbitem").showModal();
     });
 
@@ -16,21 +14,26 @@ export function setEvent(){
             return;
         }
 
-        const id = dbIndex.getNewId();
-        const folder = new Folder(id, name);
-        if(parent == null){
+        // addFolder(name.trim());
+    });
 
-            dbIndex.folders.push(folder);
-        }
-        else{
+    $("firebase-sign-up").addEventListener("click", SignUp);
+    $("firebase-sign-in").addEventListener("click", SignIn);
+    $("firebase-sign-out").addEventListener("click", SignOut);
 
-        }
+    $("sign-up-ok").addEventListener("click", SignUpOk);
+    $("sign-up-cancel").addEventListener("click", (ev : MouseEvent)=>{
+        $dlg('sign-up').close();
+    });
 
+    $("sign-in-ok").addEventListener("click", SignInOk);
+    $("sign-in-reset").addEventListener("click", resetPassword);
+    $("sign-in-cancel").addEventListener("click", (ev : MouseEvent)=>{
+        $dlg('sign-in').close();
     });
 }
 
 export function showFileDlg(){
-    $dlg("file-dlg").showModal();
 }
 
 }

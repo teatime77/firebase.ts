@@ -16,10 +16,22 @@ async function setUser(user_arg : firebase.User | null){
     user = user_arg;
     db = firebase.firestore();
 
-    const obj = await fetchDB("index");
-    if(obj != null){
-        dbIndex = new Index(obj);
-        msg(`fetch index:${JSON.stringify(dbIndex.toObj(), null, "\t")}`)
+    const initial_data = {
+        version : 1.0,
+        root : {
+            id   : 0,
+            name : "root",
+            children : []
+        }
+    };
+
+    const obj = await fetchDB("index", initial_data);
+    if(obj != undefined){
+        rootFolder = makeContents(null, obj.root) as DbFolder;
+        if(!(rootFolder instanceof DbFolder)){
+            throw new MyError();
+        }
+        msg(`fetch index: ver.${obj.version}  ${JSON.stringify(rootFolder.makeIndex(), null, "\t")}`)
     }
 
     msg(`sign in: ${user.email} ${user.uid}`);
@@ -75,11 +87,11 @@ export function resetPassword() {
 }
 
 export function SignUp(){
-    $dlg("sign-up").show();
+    $dlg("sign-up").showModal();
 }
 
 export function SignIn(){
-    $dlg("sign-in").show();
+    $dlg("sign-in").showModal();
 }
 
 export async function SignOut(){
@@ -141,7 +153,7 @@ export async function writeDB(id: string, data: any){
     }
 }
 
-export async function fetchDB(id: string) : Promise<any> {
+export async function fetchDB(id: string, initial_data : any | undefined = undefined) {
     if(user == null){
         throw new MyError();
     }
@@ -156,22 +168,88 @@ export async function fetchDB(id: string) : Promise<any> {
         else{
 
             msg(`no data:${id}`);
+            if(initial_data != undefined){
+                await writeDB(id, initial_data);
+                return initial_data;
+            }
+            else{
+                return undefined;
+            }
         }
     }
     catch(e){
         msg(`read DB error: ${user.email} ${user.uid} ${e}`);
+        throw new MyError();        
     }
-    return null;
 }
 
+export async function getDoc(id : number){
+    const json = await fetchDB(`${id}`);
+    if(json == undefined){
+        msg(`no doc:${id}`);
+        return undefined;
+    }
+    else{
+        msg(`id:${json.id} name:${json.name} text:${json.text}`);
+        if(rootFolder == null){
+            return undefined;
+        }
+        const doc = rootFolder.findDoc(id);
+        if(doc == undefined){
+            return undefined;
+        }
 
-
-export async function writeTest(){
-    const data = dbIndex.toObj();
-
-    msg(`index:${JSON.stringify(data, null, "\t")}`);
-
-    writeDB("index", data);
+        doc.text = json.text;
+        return doc;
+    }
 }
+
+export function batchWrite(doc : DbDoc) : Promise<DbDoc> {
+    return new Promise((resolve) => {
+        if(user == null){
+            throw new MyError("not log in");
+        }
+        else if(rootFolder == null){
+            throw new MyError("no root folder");
+        }
+        else{
+
+            try{
+                    let batch = db.batch();
+
+                    let doc_obj = doc.makeObj();
+
+                    // FirebaseError: Function WriteBatch.set() called with invalid data. Data must be an object, but it was: a custom object
+                    //  https://stackoverflow.com/questions/48156234/function-documentreference-set-called-with-invalid-data-unsupported-field-val
+                    let docRef = db.collection('users').doc(user.uid).collection('docs').doc(`${doc.id}`);
+                    batch.set(docRef, doc_obj);
+
+
+                    const index_obj = {
+                        version : 1.0,
+                        root : rootFolder.makeIndex()
+                    };
+                    let idxRef = db.collection('users').doc(user.uid).collection('docs').doc("index");
+                    batch.set(idxRef, index_obj);
+
+                    batch.commit().then(function () {
+                        msg("write doc OK");
+                        resolve(doc);
+                    });
+            }
+            catch(e){
+                throw new MyError(`${e}`);
+            }        }            
+
+    });
+}
+
+export async function putDoc(parent : DbFolder, name : string, text : string) : Promise<DbDoc> {
+    const doc = makeDoc(parent, name, text);
+
+    await batchWrite(doc);
+    return doc;
+}
+
 
 }
