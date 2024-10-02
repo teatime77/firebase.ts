@@ -164,6 +164,7 @@ function makeFolderHtml(item : DbItem, ul : HTMLUListElement, fnc:(id:number)=>v
         
         li.style.cursor = "pointer";
         li.addEventListener("click", (ev : MouseEvent)=>{
+            $dlg("file-dlg").close();
             fnc(item.id);
         });
 

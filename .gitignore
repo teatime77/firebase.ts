@@ -10,3 +10,4 @@ package-lock.json
 package.json
 public/lib/firebase/firebase.js
 public/lib/firebase/firebase.d.ts
+install.bat
