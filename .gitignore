@@ -11,3 +11,10 @@ package.json
 public/lib/firebase/firebase.js
 public/lib/firebase/firebase.d.ts
 install.bat
+public/katex
+public/lib/movie
+public/lib/plane
+public/lib/parser
+public/lib/i18n
+public/movie.html
+public/i18n.html
