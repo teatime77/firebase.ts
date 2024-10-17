@@ -2,12 +2,6 @@
 node_modules
 tmp
 *.log
-.firebaserc
-firebase.json
-firestore.indexes.json
-firestore.rules
-package-lock.json
-package.json
 public/lib/firebase/firebase.js
 public/lib/firebase/firebase.d.ts
 install.bat
@@ -16,5 +10,6 @@ public/lib/movie
 public/lib/plane
 public/lib/parser
 public/lib/i18n
+public/lib/layout
 public/movie.html
 public/i18n.html
