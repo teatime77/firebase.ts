@@ -8,14 +8,9 @@ let db: firebase.firestore.Firestore;
 let app  : firebase.app.App;
 let user : firebase.User | null = null;
 
-async function setUser(user_arg : firebase.User | null){
-    if(user_arg == null){
-        throw new MyError();
-    }
+let default_user_id = "aOdXlQTmMLRuBvaZAZ4onqoTkOa2";
 
-    user = user_arg;
-    db = firebase.firestore();
-
+async function getRootFolder(){
     const initial_data = {
         version : 1.0,
         root : {
@@ -33,8 +28,16 @@ async function setUser(user_arg : firebase.User | null){
         }
         msg(`fetch index: ver.${obj.version}  ${JSON.stringify(rootFolder.makeIndex(), null, "\t")}`)
     }
+}
 
-    msg(`sign in: ${user.email} ${user.uid}`);
+async function setUser(user_arg : firebase.User | null){
+    if(user_arg == null){
+        throw new MyError();
+    }
+
+    user = user_arg;
+
+    msg(`sign in: ${user.email} [${user.uid}]`);
 }
 
 export function SignUpOk(){
@@ -101,7 +104,7 @@ export async function SignOut(){
     msg("sign out done");
 }
 
-export function initFirebase() {
+export async function initFirebase() {
     setEvent();
 
     // Your web app's Firebase configuration
@@ -126,6 +129,8 @@ export function initFirebase() {
         app = firebase.app();
     }
 
+    db = firebase.firestore();
+
     console.log(app);
 
     firebase.auth().onAuthStateChanged((user_arg : firebase.User | null) => {
@@ -136,6 +141,8 @@ export function initFirebase() {
             msg("not log in");
         }
     });
+
+    await getRootFolder();
 }
 
 
@@ -154,12 +161,10 @@ export async function writeDB(id: string, data: any){
 }
 
 export async function fetchDB(id: string, initial_data : any | undefined = undefined) {
-    if(user == null){
-        throw new MyError();
-    }
+    const user_id = (user != null ? user.uid : default_user_id);
 
     try{
-        let doc_data = await db.collection('users').doc(user.uid).collection('docs').doc(id).get();
+        let doc_data = await db.collection('users').doc(user_id).collection('docs').doc(id).get();
         if(doc_data.exists){
             const data = doc_data.data();
             msg(`read DB OK:${data}`);
@@ -178,7 +183,13 @@ export async function fetchDB(id: string, initial_data : any | undefined = undef
         }
     }
     catch(e){
-        msg(`read DB error: ${user.email} ${user.uid} ${e}`);
+        if(user != null){
+            msg(`read DB error: ${user.email} [${user.uid}] ${e}`);
+        }
+        else{
+            msg(`read DB error: ${e}`);
+        }
+
         throw new MyError();        
     }
 }
