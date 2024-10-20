@@ -8,9 +8,9 @@ let db: firebase.firestore.Firestore;
 let app  : firebase.app.App;
 let user : firebase.User | null = null;
 
-let default_user_id = "aOdXlQTmMLRuBvaZAZ4onqoTkOa2";
+let default_user_id = "1";
 
-async function getRootFolder(){
+export async function makeRootFolder() : Promise<DbFolder> {
     const initial_data = {
         version : 1.0,
         root : {
@@ -20,14 +20,19 @@ async function getRootFolder(){
         }
     };
 
-    const obj = await fetchDB("index", initial_data);
-    if(obj != undefined){
-        rootFolder = makeContents(null, obj.root) as DbFolder;
-        if(!(rootFolder instanceof DbFolder)){
-            throw new MyError();
-        }
-        msg(`fetch index: ver.${obj.version}  ${JSON.stringify(rootFolder.makeIndex(), null, "\t")}`)
+    let obj = await fetchDB("index", initial_data);
+    if(obj == undefined){
+        throw new MyError("no index in DB");
     }
+
+    const root_folder = makeContents(null, obj.root) as DbFolder;
+    if(!(root_folder instanceof DbFolder)){
+        throw new MyError();
+    }
+
+    msg(`fetch index: ver.${obj.version}  ${JSON.stringify(root_folder.makeIndex(), null, "\t")}`);
+
+    return root_folder;
 }
 
 async function setUser(user_arg : firebase.User | null){
@@ -141,8 +146,6 @@ export async function initFirebase() {
             msg("not log in");
         }
     });
-
-    await getRootFolder();
 }
 
 
@@ -174,12 +177,14 @@ export async function fetchDB(id: string, initial_data : any | undefined = undef
 
             msg(`no data:${id}`);
             if(initial_data != undefined){
-                await writeDB(id, initial_data);
-                return initial_data;
+                if(window.confirm("No index data.\nDo you want to initialize index data?")){
+
+                    await writeDB(id, initial_data);
+                    return initial_data;
+                }
             }
-            else{
-                return undefined;
-            }
+
+            return undefined;
         }
     }
     catch(e){

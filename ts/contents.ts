@@ -190,9 +190,9 @@ function makeFolderHtml(item : DbItem, ul : HTMLUListElement, fnc:(id:number)=>v
 
 }
 
-export function showContents(fnc:(id:number)=>void){
+export async function showContents(fnc:(id:number)=>void){
     if(rootFolder == null){
-        return;
+        rootFolder = await makeRootFolder();
     }
 
     const dlg = $dlg("file-dlg");
