@@ -255,7 +255,8 @@ export function batchWrite(doc : DbDoc) : Promise<DbDoc> {
             }
             catch(e){
                 throw new MyError(`${e}`);
-            }        }            
+            }        
+        }            
 
     });
 }
@@ -267,5 +268,8 @@ export async function putDoc(parent : DbFolder, name : string, text : string) : 
     return doc;
 }
 
+export function getDB() : firebase.firestore.Firestore {
+    return db;
+}
 
 }

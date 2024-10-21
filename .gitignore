@@ -14,3 +14,4 @@ public/lib/layout
 public/movie.html
 public/i18n.html
 public/index.html
+firestore.rules

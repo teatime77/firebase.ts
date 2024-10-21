@@ -216,4 +216,57 @@ export function getRootFolder() : DbFolder | null {
     return rootFolder;
 }
 
+
+export async function BackUp(user_id : number){
+    if(rootFolder == undefined){
+        throw new MyError();
+    }
+
+    const items : DbItem[] = [];
+    rootFolder.getAll(items);
+    
+    const docs : DbDoc[] = items.filter(x => x instanceof DbDoc) as DbDoc[];
+
+    for(const doc of docs){
+        const json = await fetchDB(`${doc.id}`);
+        if(json == undefined){
+            msg(`no doc:${doc}`);
+            return undefined;
+        }
+
+        doc.text = json.text;
+        let obj = doc.makeObj();
+
+        msg(`doc:${obj.id} ${obj.name} ${obj.parent} [${obj.text}]`);
+    }
+
+    const db = getDB();
+
+    try{
+        let batch = db.batch();
+
+        for(const doc of docs){
+
+            let doc_obj = doc.makeObj();
+
+            let docRef = db.collection('users').doc(`${user_id}`).collection('docs').doc(`${doc.id}`);
+            batch.set(docRef, doc_obj);
+        }
+
+        const index_obj = {
+            version : 1.0,
+            root : rootFolder.makeIndex()
+        };
+        let idxRef = db.collection('users').doc(`${user_id}`).collection('docs').doc("index");
+        batch.set(idxRef, index_obj);
+
+        await batch.commit();
+        
+        msg("write doc OK");
+    }
+    catch(e){
+        throw new MyError(`${e}`);
+    }        
+}
+
 }
