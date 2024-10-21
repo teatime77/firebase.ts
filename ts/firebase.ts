@@ -30,7 +30,7 @@ export async function makeRootFolder() : Promise<DbFolder> {
         throw new MyError();
     }
 
-    msg(`fetch index: ver.${obj.version}  ${JSON.stringify(root_folder.makeIndex(), null, "\t")}`);
+    // msg(`fetch index: ver.${obj.version}  ${JSON.stringify(root_folder.makeIndex(), null, "\t")}`);
 
     return root_folder;
 }
@@ -206,7 +206,7 @@ export async function getDoc(id : number){
         return undefined;
     }
     else{
-        msg(`id:${json.id} name:${json.name} text:${json.text}`);
+        // msg(`id:${json.id} name:${json.name} text:${json.text}`);
         if(rootFolder == null){
             return undefined;
         }
