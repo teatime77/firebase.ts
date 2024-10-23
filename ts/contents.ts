@@ -52,7 +52,7 @@ export class DbDoc extends DbItem {
         }
     }
 
-    async update(){
+    async updateDocDB(){
         if(this.nameChanged){
 
             await batchWrite(this);
@@ -210,7 +210,11 @@ export async function showContents(fnc:(id:number)=>void){
 
 }
 
-export function getRootFolder() : DbFolder | null {
+export async function getRootFolder() : Promise<DbFolder> {
+    if(rootFolder == null){
+        rootFolder = await makeRootFolder();
+    }
+
     return rootFolder;
 }
 
