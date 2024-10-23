@@ -2,7 +2,7 @@ namespace firebase_ts {
 //
 
 export let rootFolder : DbFolder | null;
-let homeURL : string;
+let urlOrigin : string;
 
 abstract class DbItem {
     parent : DbFolder | null = null;
@@ -177,7 +177,7 @@ function makeFolderHtml(item : DbItem, ul : HTMLUListElement, fnc:(id:number)=>v
     }
 
     li.innerText = item.name;
-    li.style.listStyleImage = `url(${homeURL}/lib/firebase/img/${img_name}.png)`
+    li.style.listStyleImage = `url(${urlOrigin}/lib/firebase/img/${img_name}.png)`
 
     ul.append(li);
 
@@ -201,9 +201,7 @@ export async function showContents(fnc:(id:number)=>void){
 
     const ul = document.createElement("ul");
 
-    const k = document.location.href.lastIndexOf("/");
-    homeURL = document.location.href.substring(0, k);
-    msg(`home:${homeURL}`);
+    [ urlOrigin, , ] = i18n_ts.parseURL();
 
     makeFolderHtml(rootFolder, ul, fnc);
     dlg.append(ul);
