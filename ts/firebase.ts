@@ -156,7 +156,8 @@ export async function writeDB(id: string, doc_obj: any){
 
     try{
         await db.collection('users').doc(user.uid).collection('docs').doc(id).set(doc_obj);
-        msg(`write DB :id:${doc_obj.id} name:${doc_obj.name} text:${doc_obj.text}`);
+        msg(`text:${doc_obj.text}`);
+        msg(`write DB :id:${doc_obj.id} name:${doc_obj.name}`);
     }
     catch(e){
         msg(`write DB error: ${user.email} ${user.uid} ${e}`);
@@ -248,7 +249,8 @@ export function batchWrite(doc : DbDoc, doc_obj: any) : Promise<DbDoc> {
                     batch.set(idxRef, index_obj);
 
                     batch.commit().then(function () {
-                        msg(`write DB :id:${doc_obj.id} name:${doc_obj.name} text:${doc_obj.text}`);
+                        msg(`text:${doc_obj.text}`);
+                        msg(`write DB :id:${doc_obj.id} name:${doc_obj.name}`);
                         resolve(doc);
                     });
             }
