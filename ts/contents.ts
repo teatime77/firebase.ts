@@ -1,5 +1,23 @@
 namespace firebase_ts {
 //
+type Block = layout_ts.Block;
+type Dialog = layout_ts.Dialog
+
+const $flex = layout_ts.$flex;
+const $grid = layout_ts.$grid;
+const $block = layout_ts.$block;
+const $button = layout_ts.$button;
+const $dialog = layout_ts.$dialog;
+const $popup = layout_ts.$popup;
+const $textarea = layout_ts.$textarea;
+const $label = layout_ts.$label;
+const $input_number = layout_ts.$input_number;
+
+export let showAxis : HTMLInputElement;
+export let showGrid : HTMLInputElement;
+export let snapToGrid : HTMLInputElement;
+
+const TT = i18n_ts.TT;
 
 export let rootFolder : DbFolder | null;
 let urlOrigin : string;
@@ -165,21 +183,58 @@ function makeFolderHtml(item : DbItem, ul : HTMLUListElement, fnc:(id:number)=>v
     if(item instanceof DbDoc){
         
         li.style.cursor = "pointer";
-        li.addEventListener("click", (ev : MouseEvent)=>{
-            $dlg("file-dlg").close();
-            fnc(item.id);
-        });
+
+    
 
         img_name = "doc";
     }
     else{
 
         li.style.cursor = "default";
+
         img_name = "folder";
     }
 
     li.innerText = item.name;
     li.style.listStyleImage = `url(${urlOrigin}/lib/firebase/img/${img_name}.png)`
+
+    li.addEventListener("contextmenu", (ev:MouseEvent)=>{
+        ev.preventDefault();
+
+        const menu = $popup({
+            children : [
+                $button({
+                    text : TT("add doc"),
+                    click : async (ev : MouseEvent)=>{                                
+                        msg("add doc");
+                    }
+                })
+                ,
+                $button({
+                    text : TT("add folder"),
+                    click : async (ev : MouseEvent)=>{                                
+                        msg("add folder");
+
+                        const name = window.prompt("enter a folder name.");
+                        if(name == null || name.trim() == ""){
+                            return;
+                        }
+                
+                        // addFolder(name.trim());                    
+                    }
+                })
+                ,
+                $button({
+                    text : TT("delete"),
+                    click : async (ev : MouseEvent)=>{                                
+                        msg("delete");
+                    }
+                })
+            ]
+        });
+
+        menu.show(ev);
+    });
 
     ul.append(li);
 
