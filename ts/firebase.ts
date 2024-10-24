@@ -149,14 +149,14 @@ export async function initFirebase() {
 }
 
 
-export async function writeDB(id: string, data: any){
+export async function writeDB(id: string, doc_obj: any){
     if(user == null){
         throw new MyError();
     }
 
     try{
-        await db.collection('users').doc(user.uid).collection('docs').doc(id).set(data);
-        msg(`write DB OK:${id}`);
+        await db.collection('users').doc(user.uid).collection('docs').doc(id).set(doc_obj);
+        msg(`write DB :id:${doc_obj.id} name:${doc_obj.name} text:${doc_obj.text}`);
     }
     catch(e){
         msg(`write DB error: ${user.email} ${user.uid} ${e}`);
@@ -206,7 +206,7 @@ export async function getDoc(id : number){
         return undefined;
     }
     else{
-        // msg(`id:${json.id} name:${json.name} text:${json.text}`);
+        msg(`id:${json.id} name:${json.name} text:${json.text}`);
         if(rootFolder == null){
             return undefined;
         }
@@ -220,7 +220,7 @@ export async function getDoc(id : number){
     }
 }
 
-export function batchWrite(doc : DbDoc) : Promise<DbDoc> {
+export function batchWrite(doc : DbDoc, doc_obj: any) : Promise<DbDoc> {
     return new Promise((resolve) => {
         if(user == null){
             throw new MyError("not log in");
@@ -233,7 +233,6 @@ export function batchWrite(doc : DbDoc) : Promise<DbDoc> {
             try{
                     let batch = db.batch();
 
-                    let doc_obj = doc.makeObj();
 
                     // FirebaseError: Function WriteBatch.set() called with invalid data. Data must be an object, but it was: a custom object
                     //  https://stackoverflow.com/questions/48156234/function-documentreference-set-called-with-invalid-data-unsupported-field-val
@@ -249,7 +248,7 @@ export function batchWrite(doc : DbDoc) : Promise<DbDoc> {
                     batch.set(idxRef, index_obj);
 
                     batch.commit().then(function () {
-                        msg("write doc OK");
+                        msg(`write DB :id:${doc_obj.id} name:${doc_obj.name} text:${doc_obj.text}`);
                         resolve(doc);
                     });
             }
@@ -263,8 +262,9 @@ export function batchWrite(doc : DbDoc) : Promise<DbDoc> {
 
 export async function putDoc(parent : DbFolder, name : string, text : string) : Promise<DbDoc> {
     const doc = makeDoc(parent, name, text);
+    let doc_obj = doc.makeObj();
 
-    await batchWrite(doc);
+    await batchWrite(doc, doc_obj);
     return doc;
 }
 

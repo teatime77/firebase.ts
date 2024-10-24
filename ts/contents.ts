@@ -53,14 +53,16 @@ export class DbDoc extends DbItem {
     }
 
     async updateDocDB(){
+        let doc_obj = this.makeObj();
+
         if(this.nameChanged){
 
-            await batchWrite(this);
+            await batchWrite(this, doc_obj);
             this.nameChanged = false;
         }
         else{
 
-            await writeDB(`${this.id}`, this.makeObj());
+            await writeDB(`${this.id}`, doc_obj);
         }
     }
 }
