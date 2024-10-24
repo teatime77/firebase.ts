@@ -37,4 +37,10 @@ export function $dlg(id : string) : HTMLDialogElement {
     return $(id) as HTMLDialogElement;
 }
 
+export function remove<T>(v : Array<T>, x : T){
+    const idx = v.indexOf(x);
+    assert(idx != undefined);
+    v.splice(idx, 1);
+}
+
 }

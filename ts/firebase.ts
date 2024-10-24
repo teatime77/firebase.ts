@@ -272,4 +272,8 @@ export function getDB() : firebase.firestore.Firestore {
     return db;
 }
 
+export function getUser() : firebase.User | null {
+    return user;
+}
+
 }

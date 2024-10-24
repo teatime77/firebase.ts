@@ -93,6 +93,28 @@ export class DbFolder extends DbItem {
         super(parent, id, name);
     }
 
+    copy(parent : DbFolder | null) : DbFolder {
+        const folder_copy = new DbFolder(parent, this.id, this.name);
+
+        for(const [idx, item] of this.children.entries()){
+            let item_copy;
+
+            if(item instanceof DbFolder){
+                item_copy = item.copy(folder_copy);
+            }
+            else if(item instanceof DbDoc){
+                item_copy = new DbDoc(folder_copy, item.id, item.name, item.text);
+            }
+            else{
+                throw new MyError();
+            }
+
+            folder_copy.addItem(item_copy);
+        }
+
+        return folder_copy;
+    }
+
     makeIndex() : any {
         let obj = Object.assign(super.makeIndex(), {
             children : this.children.map(x => x.makeIndex())
@@ -124,8 +146,6 @@ export class DbFolder extends DbItem {
 
     }
 }
-
-
 
 export function getNewId() : number {
     if(rootFolder == null){
@@ -184,7 +204,10 @@ function makeFolderHtml(item : DbItem, ul : HTMLUListElement, fnc:(id:number)=>v
         
         li.style.cursor = "pointer";
 
-    
+        li.addEventListener("click", (ev : MouseEvent)=>{
+            $dlg("file-dlg").close();
+            fnc(item.id);
+        });    
 
         img_name = "doc";
     }
@@ -201,6 +224,10 @@ function makeFolderHtml(item : DbItem, ul : HTMLUListElement, fnc:(id:number)=>v
     li.addEventListener("contextmenu", (ev:MouseEvent)=>{
         ev.preventDefault();
 
+        const menu_items = [
+
+        ];
+        
         const menu = $popup({
             children : [
                 $button({
@@ -228,6 +255,12 @@ function makeFolderHtml(item : DbItem, ul : HTMLUListElement, fnc:(id:number)=>v
                     text : TT("delete"),
                     click : async (ev : MouseEvent)=>{                                
                         msg("delete");
+                        if(item instanceof DbDoc){
+                            await deleteDocDB(item);
+                        }
+                        else{
+
+                        }
                     }
                 })
             ]
@@ -316,6 +349,8 @@ export async function BackUp(user_id : number){
             version : 1.0,
             root : rootFolder.makeIndex()
         };
+        msg(`index:${JSON.stringify(index_obj.root, null, 4)}`);
+
         let idxRef = db.collection('users').doc(`${user_id}`).collection('docs').doc("index");
         batch.set(idxRef, index_obj);
 
@@ -326,6 +361,60 @@ export async function BackUp(user_id : number){
     catch(e){
         throw new MyError(`${e}`);
     }        
+}
+
+export async function deleteDocDB(doc : DbDoc){
+    if(! window.confirm(`Are you sure you want to delete ${doc.name}?`)){
+        return;
+    }
+
+    const user = getUser();
+    if(user == null){
+        throw new MyError();
+    }
+
+    if(rootFolder == null){
+        rootFolder = await makeRootFolder();
+    }
+
+    const root_folder_copy = rootFolder.copy(null);
+    const doc_copy = root_folder_copy.findDoc(doc.id);
+    if(doc_copy == undefined){
+        throw new MyError(`invalid doc id:${doc.id}`);
+    }
+    if(doc_copy.parent == null){
+        throw new MyError(`orphaned doc id:${doc.id} name:${doc_copy.name}`);
+    }
+
+    remove(doc_copy.parent.children, doc_copy);
+    
+    const db = getDB();
+
+    try{
+        let batch = db.batch();
+
+        const doc_ref = db.collection('users').doc(user.uid).collection('docs').doc(`${doc_copy.id}`);
+        batch.delete(doc_ref);
+
+        const index_obj = {
+            version : 1.0,
+            root : root_folder_copy.makeIndex()
+        };
+        msg(`index:${JSON.stringify(index_obj.root, null, 4)}`);
+
+        let idxRef = db.collection('users').doc(`${user.uid}`).collection('docs').doc("index");
+        batch.set(idxRef, index_obj);
+
+        await batch.commit();
+        
+        rootFolder = root_folder_copy;
+
+        msg("write doc OK");
+    }
+    catch(e){
+        throw new MyError(`${e}`);
+    }        
+
 }
 
 }
