@@ -13,10 +13,6 @@ const $textarea = layout_ts.$textarea;
 const $label = layout_ts.$label;
 const $input_number = layout_ts.$input_number;
 
-export let showAxis : HTMLInputElement;
-export let showGrid : HTMLInputElement;
-export let snapToGrid : HTMLInputElement;
-
 const TT = i18n_ts.TT;
 
 export let rootFolder : DbFolder | null;
