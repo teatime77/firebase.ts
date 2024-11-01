@@ -2,7 +2,7 @@ namespace firebase_ts {
 //
 export class MyError extends Error {
     constructor(text : string = ""){
-        super();
+        super(text);
     }
 }
 
