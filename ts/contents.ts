@@ -304,15 +304,18 @@ export async function getRootFolder() : Promise<DbFolder> {
     return rootFolder;
 }
 
-
-export async function BackUp(user_id : number){
-    if(rootFolder == undefined){
-        throw new MyError();
-    }
+export async function getAllDbItems(){
+    await getRootFolder();
 
     const items : DbItem[] = [];
-    rootFolder.getAll(items);
-    
+    rootFolder!.getAll(items);
+
+    return items;
+}
+
+export async function BackUp(user_id : number){
+    const items = await getAllDbItems();
+
     const docs : DbDoc[] = items.filter(x => x instanceof DbDoc) as DbDoc[];
 
     for(const doc of docs){
@@ -343,7 +346,7 @@ export async function BackUp(user_id : number){
 
         const index_obj = {
             version : 1.0,
-            root : rootFolder.makeIndex()
+            root : rootFolder!.makeIndex()
         };
         msg(`index:${JSON.stringify(index_obj.root, null, 4)}`);
 
