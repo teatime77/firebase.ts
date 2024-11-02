@@ -66,7 +66,7 @@ export class DbDoc extends DbItem {
         }
     }
 
-    async updateDocDB(){
+    async updateDocDB(user_uid : string){
         let doc_obj = this.makeObj();
 
         if(this.nameChanged){
@@ -76,7 +76,7 @@ export class DbDoc extends DbItem {
         }
         else{
 
-            await writeDB(`${this.id}`, doc_obj);
+            await writeDB(user_uid, `${this.id}`, doc_obj);
         }
     }
 }

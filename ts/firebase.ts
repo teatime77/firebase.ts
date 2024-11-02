@@ -149,18 +149,18 @@ export async function initFirebase() {
 }
 
 
-export async function writeDB(id: string, doc_obj: any){
+export async function writeDB(user_uid : string, id: string, doc_obj: any){
     if(user == null){
         throw new MyError();
     }
 
     try{
-        await db.collection('users').doc(user.uid).collection('docs').doc(id).set(doc_obj);
+        await db.collection('users').doc(user_uid).collection('docs').doc(id).set(doc_obj);
         msg(`text:${doc_obj.text}`);
         msg(`write DB :id:${doc_obj.id} name:${doc_obj.name}`);
     }
     catch(e){
-        msg(`write DB error: ${user.email} ${user.uid} ${e}`);
+        msg(`write DB error: ${user.email} ${user_uid} ${e}`);
     }
 }
 
@@ -180,7 +180,7 @@ export async function fetchDB(id: string, initial_data : any | undefined = undef
             if(initial_data != undefined){
                 if(window.confirm("No index data.\nDo you want to initialize index data?")){
 
-                    await writeDB(id, initial_data);
+                    await writeDB(user_id, id, initial_data);
                     return initial_data;
                 }
             }
