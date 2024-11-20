@@ -207,7 +207,7 @@ export async function getDoc(id : number){
         return undefined;
     }
     else{
-        msg(`id:${json.id} name:${json.name} text:${json.text}`);
+        msg(`id:${json.id} name:${json.name}`); //  text:${json.text}
         if(rootFolder == null){
             return undefined;
         }
