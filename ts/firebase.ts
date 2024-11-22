@@ -138,6 +138,7 @@ export async function initFirebase() {
 
     console.log(app);
 
+    let db_is_ready = false;
     firebase.auth().onAuthStateChanged((user_arg : firebase.User | null) => {
         if(user_arg != null){
             setUser(user_arg);
@@ -145,7 +146,13 @@ export async function initFirebase() {
         else{
             msg("not log in");
         }
+
+        db_is_ready = true;
     });
+
+    while(! db_is_ready){
+        await sleep(10);
+    }
 }
 
 

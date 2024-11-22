@@ -43,4 +43,13 @@ export function remove<T>(v : Array<T>, x : T){
     v.splice(idx, 1);
 }
 
+
+export async function sleep(milliseconds : number) : Promise<void> {
+    return new Promise((resolve) => {
+        setTimeout(()=>{
+            resolve();
+        }, milliseconds);
+    });
+}
+
 }
