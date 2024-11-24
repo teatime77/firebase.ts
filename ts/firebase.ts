@@ -178,7 +178,7 @@ export async function fetchDB(id: string, initial_data : any | undefined = undef
         let doc_data = await db.collection('users').doc(user_id).collection('docs').doc(id).get();
         if(doc_data.exists){
             const data = doc_data.data();
-            msg(`read DB OK:${data}`);
+            // msg(`read DB OK:${data}`);
             return data;
         }
         else{
