@@ -194,6 +194,7 @@ export function readIndex(obj : any){
 
 function makeFolderHtml(item : DbItem, ul : HTMLUListElement, fnc:(id:number)=>void){
     const li = document.createElement("li");
+    li.style.fontSize = "xxx-large";
 
     let img_name : string;
     if(item instanceof DbDoc){
