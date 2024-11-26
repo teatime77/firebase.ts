@@ -215,7 +215,7 @@ function makeFolderHtml(item : DbItem, ul : HTMLUListElement, fnc:(id:number)=>v
         img_name = "folder";
     }
 
-    li.innerText = item.name;
+    li.innerText = TT(item.name);
     li.style.listStyleImage = `url(${urlOrigin}/lib/firebase/img/${img_name}.png)`
 
     li.addEventListener("contextmenu", (ev:MouseEvent)=>{
