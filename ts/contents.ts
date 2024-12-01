@@ -66,7 +66,7 @@ export class DbDoc extends DbItem {
         }
     }
 
-    async updateDocDB(user_uid : string){
+    async updateDocDB(){
         let doc_obj = this.makeObj();
 
         if(this.nameChanged){
@@ -76,7 +76,7 @@ export class DbDoc extends DbItem {
         }
         else{
 
-            await writeDB(user_uid, `${this.id}`, doc_obj);
+            await writeDB(`${this.id}`, doc_obj);
         }
     }
 }
@@ -314,7 +314,11 @@ export async function getAllDbItems(){
     return items;
 }
 
-export async function BackUp(user_id : number){
+export async function BackUp(){
+    if(refId == undefined){
+        throw new MyError();
+    }
+
     const items = await getAllDbItems();
 
     const docs : DbDoc[] = items.filter(x => x instanceof DbDoc) as DbDoc[];
@@ -341,7 +345,7 @@ export async function BackUp(user_id : number){
 
             let doc_obj = doc.makeObj();
 
-            let docRef = db.collection('users').doc(`${user_id}`).collection('docs').doc(`${doc.id}`);
+            let docRef = db.collection('public').doc(refId).collection('docs').doc(`${doc.id}`);
             batch.set(docRef, doc_obj);
         }
 
@@ -351,7 +355,7 @@ export async function BackUp(user_id : number){
         };
         msg(`index:${JSON.stringify(index_obj.root, null, 4)}`);
 
-        let idxRef = db.collection('users').doc(`${user_id}`).collection('docs').doc("index");
+        let idxRef = db.collection('public').doc(refId).collection('docs').doc("index");
         batch.set(idxRef, index_obj);
 
         await batch.commit();
@@ -368,8 +372,7 @@ export async function deleteDocDB(doc : DbDoc){
         return;
     }
 
-    const user = getUser();
-    if(user == null){
+    if(refId == undefined){
         throw new MyError();
     }
 
@@ -393,7 +396,7 @@ export async function deleteDocDB(doc : DbDoc){
     try{
         let batch = db.batch();
 
-        const doc_ref = db.collection('users').doc(user.uid).collection('docs').doc(`${doc_copy.id}`);
+        const doc_ref = db.collection('public').doc(refId).collection('docs').doc(`${doc_copy.id}`);
         batch.delete(doc_ref);
 
         const index_obj = {
@@ -402,7 +405,7 @@ export async function deleteDocDB(doc : DbDoc){
         };
         msg(`index:${JSON.stringify(index_obj.root, null, 4)}`);
 
-        let idxRef = db.collection('users').doc(`${user.uid}`).collection('docs').doc("index");
+        let idxRef = db.collection('public').doc(refId).collection('docs').doc("index");
         batch.set(idxRef, index_obj);
 
         await batch.commit();

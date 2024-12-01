@@ -7,6 +7,7 @@ let db: firebase.firestore.Firestore;
 
 let app  : firebase.app.App;
 let user : firebase.User | null = null;
+export let refId : string | undefined = "aNv8XFLZddFpYNoB";
 
 let default_user_id = "1";
 
@@ -153,29 +154,89 @@ export async function initFirebase() {
     while(! db_is_ready){
         await sleep(10);
     }
+
+    if(user != null){
+
+        let data = await getUserData();
+        if(data == undefined){
+            const user_data = {
+                refId : generateRandomString(16)
+            };
+
+            // await setUserData(user_data);
+        }
+
+        if(data != undefined && typeof data.refId == "string"){
+            refId = data.refId;
+            msg(`ref Id:[${refId}]`);
+        }
+    }
 }
 
 
-export async function writeDB(user_uid : string, id: string, doc_obj: any){
+export async function writeDB(id: string, doc_obj: any){
+    if(user == null || refId == undefined){
+        throw new MyError();
+    }
+
+    try{
+        await db.collection('public').doc(refId).collection('docs').doc(id).set(doc_obj);
+        msg(`text:${doc_obj.text}`);
+        msg(`write DB :id:${doc_obj.id} name:${doc_obj.name}`);
+    }
+    catch(e){
+        msg(`write DB error: ${user.email} ref:${refId} ${e}`);
+    }
+}
+
+
+export async function setUserData(user_data: any){
     if(user == null){
         throw new MyError();
     }
 
     try{
-        await db.collection('users').doc(user_uid).collection('docs').doc(id).set(doc_obj);
-        msg(`text:${doc_obj.text}`);
-        msg(`write DB :id:${doc_obj.id} name:${doc_obj.name}`);
+        await db.collection('users').doc(user.uid).set(user_data);
+        msg(`set user data : ${JSON.stringify(user_data, null, 4)}`);
     }
     catch(e){
-        msg(`write DB error: ${user.email} ${user_uid} ${e}`);
+        msg(`set user data error: ${user.email} [${user.uid}] [${user_data}] ${e}`);
     }
 }
 
-export async function fetchDB(id: string, initial_data : any | undefined = undefined) {
-    const user_id = (user != null ? user.uid : default_user_id);
+
+export async function getUserData() {
+    if(user == null){
+
+        throw new MyError();        
+    }
 
     try{
-        let doc_data = await db.collection('users').doc(user_id).collection('docs').doc(id).get();
+        let user_data = await db.collection('users').doc(user.uid).get();
+        if(user_data.exists){
+
+            const data = user_data.data();
+            msg(`get user data OK:${JSON.stringify(data, null, 4)}`);
+            return data;
+        }
+        else{
+
+            msg(`no user data: ${user.email} [${user.uid}]`);
+
+            return undefined;
+        }
+    }
+    catch(e){
+        msg(`get user data error: ${user.email} [${user.uid}] ${e}`);
+
+        throw new MyError();        
+    }
+}
+
+
+export async function fetchDB(id: string, initial_data : any | undefined = undefined) {
+    try{
+        let doc_data = await db.collection('public').doc(refId).collection('docs').doc(id).get();
         if(doc_data.exists){
             const data = doc_data.data();
             // msg(`read DB OK:${data}`);
@@ -187,7 +248,7 @@ export async function fetchDB(id: string, initial_data : any | undefined = undef
             if(initial_data != undefined){
                 if(window.confirm("No index data.\nDo you want to initialize index data?")){
 
-                    await writeDB(user_id, id, initial_data);
+                    await writeDB(id, initial_data);
                     return initial_data;
                 }
             }
@@ -230,7 +291,7 @@ export async function getDoc(id : number){
 
 export function batchWrite(doc : DbDoc, doc_obj: any) : Promise<DbDoc> {
     return new Promise((resolve) => {
-        if(user == null){
+        if(user == null || refId == undefined){
             throw new MyError("not log in");
         }
         else if(rootFolder == null){
@@ -244,7 +305,7 @@ export function batchWrite(doc : DbDoc, doc_obj: any) : Promise<DbDoc> {
 
                     // FirebaseError: Function WriteBatch.set() called with invalid data. Data must be an object, but it was: a custom object
                     //  https://stackoverflow.com/questions/48156234/function-documentreference-set-called-with-invalid-data-unsupported-field-val
-                    let docRef = db.collection('users').doc(user.uid).collection('docs').doc(`${doc.id}`);
+                    let docRef = db.collection('public').doc(refId).collection('docs').doc(`${doc.id}`);
                     batch.set(docRef, doc_obj);
 
 
@@ -252,7 +313,7 @@ export function batchWrite(doc : DbDoc, doc_obj: any) : Promise<DbDoc> {
                         version : 1.0,
                         root : rootFolder.makeIndex()
                     };
-                    let idxRef = db.collection('users').doc(user.uid).collection('docs').doc("index");
+                    let idxRef = db.collection('public').doc(refId).collection('docs').doc("index");
                     batch.set(idxRef, index_obj);
 
                     batch.commit().then(function () {
