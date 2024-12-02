@@ -119,7 +119,7 @@ export async function initFirebase() {
         apiKey: "AIzaSyA8nwVjTKGsSoIrgbcFYfYHqTpaQO_rxX0",
         authDomain: "uroadb.firebaseapp.com",
         projectId: "uroadb",
-        storageBucket: "uroadb.appspot.com",
+        storageBucket: "uroadb.firebasestorage.app",
         messagingSenderId: "930380386712",
         appId: "1:930380386712:web:a8b3b5e6a9236c80095bed",
         measurementId: "G-0ZXZKCWJ2Z"
@@ -171,6 +171,8 @@ export async function initFirebase() {
             msg(`ref Id:[${refId}]`);
         }
     }
+
+    initStorage();
 }
 
 
