@@ -186,23 +186,173 @@ export function makeContents(parent : DbFolder | null, obj : any) : DbItem {
     }
 }
 
-export function readIndex(obj : any){
+
+let DbItemId = 0;
+let selectedFileItems : HTMLLIElement[] = [];
+let IdtoItem : Map<string, DbItem>;
+let rootUL : HTMLUListElement;
+
+function clearFileItemBorder(){
+    const insertion_points = document.getElementsByClassName("file-item");
+    for(const ele of insertion_points){
+        (ele as HTMLElement).style.borderStyle = "none";
+    }
+}
+
+function setFileItemSelection(lis : HTMLLIElement[]){
+    clearFileItemSelection();
+
+    selectedFileItems = lis.slice();
+    selectedFileItems.forEach(x => x.style.backgroundColor = "DeepSkyBlue");
+}
+
+function clearFileItemSelection(){
+    selectedFileItems.forEach(x => x.style.backgroundColor = "");
+    selectedFileItems = [];
+}
+
+function setDragDrop(li : HTMLLIElement){
+    li.draggable = true;
+    // li.style.cursor = "move";
+
+    li.addEventListener('dragstart', (ev : DragEvent)=>{
+        clearFileItemBorder();
+        msg(`drag start`);
+
+        if(ev.dataTransfer != null && ev.target instanceof HTMLElement){
+            if(selectedFileItems.length == 0){
+
+                setFileItemSelection([ li ]);
+            }
+
+            ev.dataTransfer.setData('text/plain', ev.target.id);
+        }
+    });
+
+    li.addEventListener('dragover', (ev : DragEvent)=>{
+        ev.preventDefault();
+        clearFileItemBorder();
+
+        msg(`drag over`);
+        const rc = li.getBoundingClientRect();
+        const center_y = rc.y + 0.5 * rc.height;
+
+        if(center_y < ev.clientY){
+
+            li.style.borderBottomStyle = "solid";
+        }
+        else{
+            const prev = li.previousElementSibling;
+            if(prev instanceof HTMLLIElement){
+
+                prev.style.borderBottomStyle = "solid";
+            }
+            else{
+
+                li.style.borderTopStyle = "solid";
+            }
+        }
+    });
+
+    li.addEventListener('dragleave', (ev : DragEvent)=>{
+        clearFileItemBorder();
+        msg(`drag leave`);
+    });
+
+    li.addEventListener("dragend", (ev : DragEvent)=>{
+        msg(`drag end`);
+        clearFileItemBorder();
+        clearFileItemSelection();
+    });
+
+    li.addEventListener('drop', (ev : DragEvent)=>{
+        ev.preventDefault();
+        msg("drop")
+
+        if(selectedFileItems.length != 0){
+
+            const target = IdtoItem.get(li.id);
+            if(target == undefined){
+                throw new MyError();                
+            }
+
+            const items : DbItem[] = [];
+            for(const li2 of selectedFileItems){
+                const item = IdtoItem.get(li2.id);
+                if(item == undefined){
+                    throw new MyError();
+                }
+                items.push(item);
+            }
+            const items_parent = items[0].parent!;
+            items.forEach(item => remove(items_parent.children, item));
+
+            const target_idx = target.parent!.children.indexOf(target);
+            if(target_idx == -1){
+                throw new MyError();
+            }
+
+            target.parent!.children.splice(target_idx, 0, ...items);
+            items.forEach(x => x.parent = target.parent);
+
+            rootUL.innerHTML = "";
+            makeFolderHtml(rootFolder!, rootUL, undefined);
+        }
+
+        clearFileItemBorder();
+        clearFileItemSelection();
+    });
+
+    li.addEventListener("click", (ev : MouseEvent)=>{
+        msg(`click`);
+        if(ev.shiftKey){
+            if(selectedFileItems.length == 1 && selectedFileItems[0].parentElement == li.parentElement){
+                const children = Array.from(li.parentElement!.children) as HTMLLIElement[];
+                let i1 = children.indexOf(li);
+                let i2 = children.indexOf(selectedFileItems[0]);
+                if(i2 < i1){
+                    [i1, i2] = [i2, i1];
+                }
+
+                setFileItemSelection(children.slice(i1, i2 + 1))
+            }
+        }
+        else{
+
+            setFileItemSelection([ li ]);
+        }
+    });    
 
 }
 
-function makeFolderHtml(item : DbItem, ul : HTMLUListElement, fnc:(id:number)=>void){
+function makeFolderHtml(item : DbItem, ul : HTMLUListElement, fnc?:(id:number)=>void){
     const li = document.createElement("li");
-    li.style.fontSize = "xxx-large";
+    li.id = `db-item-${++DbItemId}`;
+    IdtoItem.set(li.id, item);
+
+    if(fnc != undefined){
+
+        li.style.fontSize = "xxx-large";
+    }
+    else{
+
+        li.style.borderWidth = "2px";
+        li.className = "file-item";
+        setDragDrop(li);
+    }
 
     let img_name : string;
     if(item instanceof DbDoc){
         
         li.style.cursor = "pointer";
 
-        li.addEventListener("click", (ev : MouseEvent)=>{
-            $dlg("file-dlg").close();
-            fnc(item.id);
-        });    
+        if(fnc != undefined){
+
+            li.addEventListener("click", (ev : MouseEvent)=>{
+                $dlg("file-dlg").close();
+                fnc(item.id);
+            });    
+        }
 
         img_name = "doc";
     }
@@ -218,10 +368,6 @@ function makeFolderHtml(item : DbItem, ul : HTMLUListElement, fnc:(id:number)=>v
 
     li.addEventListener("contextmenu", (ev:MouseEvent)=>{
         ev.preventDefault();
-
-        const menu_items = [
-
-        ];
         
         const menu = $popup({
             children : [
@@ -275,7 +421,7 @@ function makeFolderHtml(item : DbItem, ul : HTMLUListElement, fnc:(id:number)=>v
 
 }
 
-export async function showContents(fnc:(id:number)=>void){
+export async function showContents(fnc?:(id:number)=>void){
     if(rootFolder == null){
         rootFolder = await makeRootFolder();
     }
@@ -284,12 +430,13 @@ export async function showContents(fnc:(id:number)=>void){
 
     dlg.innerHTML = "";
 
-    const ul = document.createElement("ul");
+    rootUL = document.createElement("ul");
 
     [ urlOrigin, , ] = i18n_ts.parseURL();
 
-    makeFolderHtml(rootFolder, ul, fnc);
-    dlg.append(ul);
+    IdtoItem = new Map<string, DbItem>();
+    makeFolderHtml(rootFolder, rootUL, fnc);
+    dlg.append(rootUL);
 
     dlg.showModal();
 
@@ -313,7 +460,7 @@ export async function getAllDbItems(){
 }
 
 export async function BackUp(){
-    if(refId == undefined){
+    if(refId == undefined || user == null){
         throw new MyError();
     }
 
@@ -334,16 +481,20 @@ export async function BackUp(){
         msg(`doc:${obj.id} ${obj.name} ${obj.parent} [${obj.text}]`);
     }
 
+    const date_str = dateString();
+
     const db = getDB();
 
     try{
+        const backup_ref = db.collection('users').doc(user.uid).collection('backup').doc(date_str).collection('docs');
+
         let batch = db.batch();
 
         for(const doc of docs){
 
             let doc_obj = doc.makeObj();
 
-            let docRef = db.collection('public').doc(refId).collection('docs').doc(`${doc.id}`);
+            let docRef = backup_ref.doc(`${doc.id}`);
             batch.set(docRef, doc_obj);
         }
 
@@ -353,12 +504,12 @@ export async function BackUp(){
         };
         msg(`index:${JSON.stringify(index_obj.root, null, 4)}`);
 
-        let idxRef = db.collection('public').doc(refId).collection('docs').doc("index");
+        let idxRef = backup_ref.doc("index");
         batch.set(idxRef, index_obj);
 
         await batch.commit();
         
-        msg("write doc OK");
+        msg(`back up completes.[${date_str}]`);
     }
     catch(e){
         throw new MyError(`${e}`);

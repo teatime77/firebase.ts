@@ -6,7 +6,7 @@ namespace firebase_ts {
 let db: firebase.firestore.Firestore;
 
 let app  : firebase.app.App;
-let user : firebase.User | null = null;
+export let user : firebase.User | null = null;
 export let refId : string | undefined = "aNv8XFLZddFpYNoB";
 
 let default_user_id = "1";

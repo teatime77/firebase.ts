@@ -72,4 +72,17 @@ export function generateRandomString(length : number) {
     return randomString;
 }
 
+export function dateString() : string {
+    // Create a new Date object representing the current date and time
+    const currentDate = new Date();
+
+    // Add 9 hours to the current date and time
+    currentDate.setHours(currentDate.getHours() + 9);
+
+    const s = currentDate.toISOString().replace("T", "-").replaceAll(":", "-");
+    const k = s.indexOf(".");
+
+    return s.substring(0, k);
+}
+
 }
