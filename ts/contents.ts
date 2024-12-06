@@ -164,10 +164,12 @@ export function makeDoc(parent : DbFolder, name : string, text : string) : DbDoc
     return doc;
 }
 
-export function addFolder(parent : DbFolder, name : string){
+export async function addFolder(parent : DbFolder, name : string){
     const id = getNewId();
     const folder = new DbFolder(parent, id, name);
     parent.children.push(folder);
+
+    await updateIndex();
 }
 
 export function makeContents(parent : DbFolder | null, obj : any) : DbItem {
@@ -373,6 +375,7 @@ function makeFolderHtml(item : DbItem, ul : HTMLUListElement, fnc?:(id:number)=>
             children : [
                 $button({
                     text : TT("add doc"),
+                    fontSize : "large",
                     click : async (ev : MouseEvent)=>{                                
                         msg("add doc");
                     }
@@ -380,6 +383,8 @@ function makeFolderHtml(item : DbItem, ul : HTMLUListElement, fnc?:(id:number)=>
                 ,
                 $button({
                     text : TT("add folder"),
+                    fontSize : "large",
+                    disabled : !(item instanceof DbFolder),
                     click : async (ev : MouseEvent)=>{                                
                         msg("add folder");
 
@@ -388,12 +393,32 @@ function makeFolderHtml(item : DbItem, ul : HTMLUListElement, fnc?:(id:number)=>
                             return;
                         }
                 
-                        // addFolder(name.trim());                    
+                        if(item instanceof DbFolder){
+
+                            await addFolder(item, name.trim());                    
+                        }
+                    }
+                })
+                ,
+                $button({
+                    text : TT("rename"),
+                    fontSize : "large",
+                    click : async (ev : MouseEvent)=>{                                
+                        msg("add folder");
+
+                        const name = window.prompt("enter a new name.", item.name);
+                        if(name == null || name.trim() == ""){
+                            return;
+                        }
+                
+                        item.name = name.trim();
+                        await updateIndex();
                     }
                 })
                 ,
                 $button({
                     text : TT("delete"),
+                    fontSize : "large",
                     click : async (ev : MouseEvent)=>{                                
                         msg("delete");
                         if(item instanceof DbDoc){
@@ -545,7 +570,7 @@ export async function deleteDocDB(doc : DbDoc){
     try{
         let batch = db.batch();
 
-        const doc_ref = db.collection('public').doc(refId).collection('docs').doc(`${doc_copy.id}`);
+        const doc_ref = getDocRef(`${doc_copy.id}`);
         batch.delete(doc_ref);
 
         const index_obj = {
@@ -554,7 +579,7 @@ export async function deleteDocDB(doc : DbDoc){
         };
         msg(`index:${JSON.stringify(index_obj.root, null, 4)}`);
 
-        let idxRef = db.collection('public').doc(refId).collection('docs').doc("index");
+        let idxRef = getDocRef("index");
         batch.set(idxRef, index_obj);
 
         await batch.commit();

@@ -159,20 +159,44 @@ export async function initFirebase() {
 
         let data = await getUserData();
         if(data == undefined){
-            const user_data = {
-                refId : generateRandomString(16)
-            };
+            if(window.confirm("No user data.\nDo you want to initialize user data?")){
 
-            // await setUserData(user_data);
+                const user_data = {
+                    refId : generateRandomString(16)
+                };
+
+                await setUserData(user_data);
+
+                data = await getUserData();
+                if(data == undefined){
+                    throw new MyError("can not initialize user data");
+                }
+            }
+            else{
+                return;
+            }
+
         }
 
-        if(data != undefined && typeof data.refId == "string"){
+        if(typeof data.refId == "string"){
             refId = data.refId;
             msg(`ref Id:[${refId}]`);
+        }
+        else{
+
+            throw new MyError("no ref Id");
         }
     }
 
     initStorage();
+}
+
+export function getDocRef(id : string){
+    if(refId == undefined){
+        throw new MyError();
+    }
+
+    return db.collection('public').doc(refId).collection('docs').doc(id);
 }
 
 
@@ -182,7 +206,7 @@ export async function writeDB(id: string, doc_obj: any){
     }
 
     try{
-        await db.collection('public').doc(refId).collection('docs').doc(id).set(doc_obj);
+        await getDocRef(id).set(doc_obj);
         msg(`text:${doc_obj.text}`);
         msg(`write DB :id:${doc_obj.id} name:${doc_obj.name}`);
     }
@@ -238,7 +262,7 @@ export async function getUserData() {
 
 export async function fetchDB(id: string, initial_data : any | undefined = undefined) {
     try{
-        let doc_data = await db.collection('public').doc(refId).collection('docs').doc(id).get();
+        let doc_data = await getDocRef(id).get();
         if(doc_data.exists){
             const data = doc_data.data();
             // msg(`read DB OK:${data}`);
@@ -307,7 +331,7 @@ export function batchWrite(doc : DbDoc, doc_obj: any) : Promise<DbDoc> {
 
                     // FirebaseError: Function WriteBatch.set() called with invalid data. Data must be an object, but it was: a custom object
                     //  https://stackoverflow.com/questions/48156234/function-documentreference-set-called-with-invalid-data-unsupported-field-val
-                    let docRef = db.collection('public').doc(refId).collection('docs').doc(`${doc.id}`);
+                    let docRef = getDocRef(`${doc.id}`);
                     batch.set(docRef, doc_obj);
 
 
@@ -315,7 +339,7 @@ export function batchWrite(doc : DbDoc, doc_obj: any) : Promise<DbDoc> {
                         version : 1.0,
                         root : rootFolder.makeIndex()
                     };
-                    let idxRef = db.collection('public').doc(refId).collection('docs').doc("index");
+                    let idxRef = getDocRef("index");
                     batch.set(idxRef, index_obj);
 
                     batch.commit().then(function () {
@@ -330,6 +354,26 @@ export function batchWrite(doc : DbDoc, doc_obj: any) : Promise<DbDoc> {
         }            
 
     });
+}
+
+export async function updateIndex() {
+    if(user == null || rootFolder == null || refId == undefined){
+        throw new MyError();
+    }
+
+    const index_obj = {
+        version : 1.0,
+        root : rootFolder.makeIndex()
+    };
+
+    try{
+        await getDocRef("index").set(index_obj);
+        msg(`update index [${JSON.stringify(index_obj, null, 4)}]`);
+    }
+    catch(e){
+        msg(`update index error: ${user.email} ref:${refId} ${e}`);
+    }
+    
 }
 
 export async function putDoc(parent : DbFolder, name : string, text : string) : Promise<DbDoc> {
