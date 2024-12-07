@@ -376,7 +376,12 @@ export async function updateIndex() {
     
 }
 
-export async function putDoc(parent : DbFolder, name : string, text : string) : Promise<DbDoc> {
+export async function putDoc(parent : DbFolder, text : string) : Promise<DbDoc | undefined> {
+    const name = inputDocName("");
+    if(name == ""){
+        return undefined;
+    }
+
     const doc = makeDoc(parent, name, text);
     let doc_obj = doc.makeObj();
 

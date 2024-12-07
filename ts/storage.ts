@@ -32,4 +32,22 @@ export async function uploadImgFile(file : File) {
     }
 }
 
+export async function getStorageDownloadURL(path : string){   
+    let url : string;
+    try{
+        const file_ref = firebase.storage().ref().child(path);
+        url = await file_ref.getDownloadURL();
+        if(typeof url == "string"){
+            msg(`storage url:[${url}]`);
+            return url;
+        }
+    }
+    catch(e){
+        throw new MyError(`get storage download URL error:${e}`);
+    }
+
+
+    throw new MyError();
+}
+
 }

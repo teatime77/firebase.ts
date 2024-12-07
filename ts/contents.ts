@@ -159,7 +159,7 @@ export function getNewId() : number {
 export function makeDoc(parent : DbFolder, name : string, text : string) : DbDoc {
     const id = getNewId();
     const doc = new DbDoc(parent, id, name, text);
-    parent.children.push(doc);
+    parent.addItem(doc);
 
     return doc;
 }
@@ -186,6 +186,16 @@ export function makeContents(parent : DbFolder | null, obj : any) : DbItem {
         const doc = new DbDoc(parent, obj.id, obj.name, obj.text);
         return doc;
     }
+}
+
+
+export function inputDocName(default_name : string) : string {
+    let name = prompt("Enter the document name.", default_name);
+    if(name == null || name.trim() == ""){
+        return "";
+    }
+
+    return name.trim();
 }
 
 
@@ -298,7 +308,7 @@ function setDragDrop(li : HTMLLIElement){
             items.forEach(x => x.parent = target.parent);
 
             rootUL.innerHTML = "";
-            makeFolderHtml(rootFolder!, rootUL, undefined);
+            makeFolderHtml(rootFolder!, rootUL, undefined, undefined);
         }
 
         clearFileItemBorder();
@@ -327,12 +337,12 @@ function setDragDrop(li : HTMLLIElement){
 
 }
 
-function makeFolderHtml(item : DbItem, ul : HTMLUListElement, fnc?:(id:number)=>void){
+function makeFolderHtml(item : DbItem, ul : HTMLUListElement, read_doc?:(id:number)=>void, doc_text? : string){
     const li = document.createElement("li");
     li.id = `db-item-${++DbItemId}`;
     IdtoItem.set(li.id, item);
 
-    if(fnc != undefined){
+    if(read_doc != undefined){
 
         li.style.fontSize = "xxx-large";
     }
@@ -348,11 +358,11 @@ function makeFolderHtml(item : DbItem, ul : HTMLUListElement, fnc?:(id:number)=>
         
         li.style.cursor = "pointer";
 
-        if(fnc != undefined){
+        if(read_doc != undefined){
 
             li.addEventListener("click", (ev : MouseEvent)=>{
                 $dlg("file-dlg").close();
-                fnc(item.id);
+                read_doc(item.id);
             });    
         }
 
@@ -370,67 +380,79 @@ function makeFolderHtml(item : DbItem, ul : HTMLUListElement, fnc?:(id:number)=>
 
     li.addEventListener("contextmenu", (ev:MouseEvent)=>{
         ev.preventDefault();
+
+        let menu : layout_ts.PopupMenu;
         
-        const menu = $popup({
-            children : [
-                $button({
-                    text : TT("add doc"),
-                    fontSize : "large",
-                    click : async (ev : MouseEvent)=>{                                
-                        msg("add doc");
-                    }
-                })
-                ,
-                $button({
-                    text : TT("add folder"),
-                    fontSize : "large",
-                    disabled : !(item instanceof DbFolder),
-                    click : async (ev : MouseEvent)=>{                                
-                        msg("add folder");
+        if(doc_text != undefined){
 
-                        const name = window.prompt("enter a folder name.");
-                        if(name == null || name.trim() == ""){
-                            return;
+            menu = $popup({
+                children : [
+                    $button({
+                        text : TT("new doc"),
+                        fontSize : "large",
+                        click : async (ev : MouseEvent)=>{                                
+                            const parent = (item instanceof DbFolder ? item : item.parent!);
+                            putDoc(parent, doc_text);
                         }
-                
-                        if(item instanceof DbFolder){
+                    })
+                ]
+            });
+        }
+        else{
 
-                            await addFolder(item, name.trim());                    
-                        }
-                    }
-                })
-                ,
-                $button({
-                    text : TT("rename"),
-                    fontSize : "large",
-                    click : async (ev : MouseEvent)=>{                                
-                        msg("add folder");
+            menu = $popup({
+                children : [
+                    $button({
+                        text : TT("add folder"),
+                        fontSize : "large",
+                        disabled : !(item instanceof DbFolder),
+                        click : async (ev : MouseEvent)=>{                                
+                            msg("add folder");
 
-                        const name = window.prompt("enter a new name.", item.name);
-                        if(name == null || name.trim() == ""){
-                            return;
-                        }
-                
-                        item.name = name.trim();
-                        await updateIndex();
-                    }
-                })
-                ,
-                $button({
-                    text : TT("delete"),
-                    fontSize : "large",
-                    click : async (ev : MouseEvent)=>{                                
-                        msg("delete");
-                        if(item instanceof DbDoc){
-                            await deleteDocDB(item);
-                        }
-                        else{
+                            const name = window.prompt("enter a folder name.");
+                            if(name == null || name.trim() == ""){
+                                return;
+                            }
+                    
+                            if(item instanceof DbFolder){
 
+                                await addFolder(item, name.trim());                    
+                            }
                         }
-                    }
-                })
-            ]
-        });
+                    })
+                    ,
+                    $button({
+                        text : TT("rename"),
+                        fontSize : "large",
+                        click : async (ev : MouseEvent)=>{                                
+                            msg("add folder");
+
+                            const name = window.prompt("enter a new name.", item.name);
+                            if(name == null || name.trim() == ""){
+                                return;
+                            }
+                    
+                            item.name = name.trim();
+                            await updateIndex();
+                        }
+                    })
+                    ,
+                    $button({
+                        text : TT("delete"),
+                        fontSize : "large",
+                        click : async (ev : MouseEvent)=>{                                
+                            msg("delete");
+                            if(item instanceof DbDoc){
+                                await deleteDocDB(item);
+                            }
+                            else{
+
+                            }
+                        }
+                    })
+                ]
+            });
+        }
 
         menu.show(ev);
     });
@@ -440,13 +462,13 @@ function makeFolderHtml(item : DbItem, ul : HTMLUListElement, fnc?:(id:number)=>
     if(item instanceof DbFolder){
 
         const children_ul = document.createElement("ul");
-        item.children.forEach(x => makeFolderHtml(x, children_ul, fnc));
+        item.children.forEach(x => makeFolderHtml(x, children_ul, read_doc, doc_text));
         ul.append(children_ul);
     }
 
 }
 
-export async function showContents(fnc?:(id:number)=>void){
+export async function showContents(read_doc?:(id:number)=>void, doc_text? : string){
     if(rootFolder == null){
         rootFolder = await makeRootFolder();
     }
@@ -460,7 +482,7 @@ export async function showContents(fnc?:(id:number)=>void){
     [ urlOrigin, , ] = i18n_ts.parseURL();
 
     IdtoItem = new Map<string, DbItem>();
-    makeFolderHtml(rootFolder, rootUL, fnc);
+    makeFolderHtml(rootFolder, rootUL, read_doc, doc_text);
     dlg.append(rootUL);
 
     dlg.showModal();
