@@ -43,7 +43,7 @@ async function setUser(user_arg : firebase.User | null){
 
     user = user_arg;
 
-    msg(`sign in: ${user.email} [${user.uid}]`);
+    msg(`sign in: ${user.email} uid:[${user.uid}]`);
 }
 
 export function SignUpOk(){
