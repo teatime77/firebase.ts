@@ -16,7 +16,7 @@ const TT = i18n_ts.TT;
 export let rootFolder : DbFolder | null;
 let urlOrigin : string;
 
-abstract class DbItem {
+export abstract class DbItem {
     parent : DbFolder | null = null;
     id : number;
     name : string;

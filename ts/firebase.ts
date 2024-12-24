@@ -7,7 +7,8 @@ let db: firebase.firestore.Firestore;
 
 let app  : firebase.app.App;
 export let user : firebase.User | null = null;
-export let refId : string | undefined = "aNv8XFLZddFpYNoB";
+export const defaultRefId = "aNv8XFLZddFpYNoB";
+export let refId : string | undefined = defaultRefId;
 
 let default_user_id = "1";
 
@@ -191,12 +192,12 @@ export async function initFirebase() {
     initStorage();
 }
 
-export function getDocRef(id : string){
-    if(refId == undefined){
+export function getDocRef(id : string, ref_id = refId){
+    if(ref_id == undefined){
         throw new MyError();
     }
 
-    return db.collection('public').doc(refId).collection('docs').doc(id);
+    return db.collection('public').doc(ref_id).collection('docs').doc(id);
 }
 
 
