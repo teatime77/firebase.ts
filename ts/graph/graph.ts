@@ -31,6 +31,30 @@ export let langIdx : number = 1;
 
 let showSubgraph : boolean = true;
 
+function makeImgFromNode(map_div : HTMLElement, doc : Doc, g : SVGGraphicsElement){
+    if(doc.img == undefined){
+
+        doc.img = document.createElement("img");
+        doc.img.alt = doc.localTitle();
+        doc.img.style.position = "absolute";
+
+        doc.img.addEventListener("click", doc.onVizClick.bind(doc));
+
+        firebase_ts.getThumbnailDownloadURL(doc.id).then((url:string)=>{
+            doc.img!.src = url;
+        });    
+    }
+
+    const bbox = g.getBoundingClientRect();
+
+    doc.img.style.left = `${bbox.x + 2}px`;
+    doc.img.style.top  = `${bbox.y + 2}px`;
+    doc.img.style.width  = `${bbox.width  - 4}px`;
+    doc.img.style.height = `${bbox.height - 4}px`;
+
+    map_div.append(doc.img);
+}
+
 export class Graph {
     docs : Doc[];
     edgeMap = new Map<string, Edge>();
@@ -82,12 +106,25 @@ export class Graph {
             ${ranks.join('\n')}
         }
         `;
+        msg(`dot:${dot}`);
 
-        Viz.instance().then(function(viz:any) {
+        Viz.instance().then(async function(viz:any) {
+
             var svg = viz.renderSVGElement(dot) as SVGSVGElement;
 
             svg.addEventListener("contextmenu", onMenu);
             svg.addEventListener("click", graph.onClick.bind(graph));
+
+            const map_div = $("map-div");
+            map_div.innerHTML = "";
+
+            map_div.appendChild(svg);
+
+            const rc = svg.getBoundingClientRect();
+
+            map_div.style.width = `${rc.width.toFixed()}px`;
+            map_div.style.height = `${rc.height.toFixed()}px`;
+
 
             const nodes = Array.from(svg.getElementsByClassName("node doc")) as SVGGElement[];
             for(const g of nodes){
@@ -97,11 +134,12 @@ export class Graph {
                     msg(`node NG: ${g.id} [${g.textContent}]`);
                 }
                 else{
-                    g.addEventListener("click", doc.onVizClick.bind(doc));
 
-                    const ellipses = g.getElementsByTagName("ellipse");
-                    if(ellipses.length == 1){
-                        doc.ellipse = ellipses.item(0)!;
+                    makeImgFromNode(map_div, doc, g);
+
+                    const polygons = g.getElementsByTagName("polygon");
+                    if(polygons.length == 1){
+                        doc.polygon = polygons.item(0)!;
                     }
                 }
 
@@ -148,16 +186,6 @@ export class Graph {
                     g.setAttribute("cursor", "pointer");
                 }
             }
-
-            const map_div = $("map-div");
-            map_div.innerHTML = "";
-
-            map_div.appendChild(svg);
-
-            const rc = svg.getBoundingClientRect();
-
-            map_div.style.width = `${rc.width.toFixed()}px`;
-            map_div.style.height = `${rc.height.toFixed()}px`;
         });
     }
 

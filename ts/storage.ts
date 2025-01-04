@@ -78,4 +78,10 @@ export async function getStorageDownloadURL(path : string){
     throw new MyError();
 }
 
+export async function getThumbnailDownloadURL(doc_id : number) : Promise<string> {
+    const path = getThumbnailPath(doc_id);
+    const url = await getStorageDownloadURL(path);
+    return url;
+}
+
 }

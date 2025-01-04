@@ -263,11 +263,13 @@ export class Doc extends MapItem {
 
     text! : SVGTextElement;
     rect! : SVGRectElement;
-    ellipse : SVGEllipseElement | undefined;
+    polygon : SVGPolygonElement | undefined;
     textBox! : DOMRect;
 
     width  : number = NaN;
     height : number = NaN;
+
+    img : HTMLImageElement | undefined;
 
     constructor(id : number, title : string, wiki : string | undefined){
         super(id, title, wiki);
@@ -292,8 +294,8 @@ export class Doc extends MapItem {
             this.rect.setAttribute("stroke", color);
         }
 
-        if(this.ellipse != undefined){
-            this.ellipse.setAttribute("stroke", color);
+        if(this.polygon != undefined){
+            this.polygon.setAttribute("stroke", color);
         }
     }
 
@@ -336,6 +338,8 @@ export class Doc extends MapItem {
         ev.stopPropagation();
         ev.preventDefault();
 
+        msg(`img : ${this.id} ${this.localTitle()}`);
+
         if(ev.ctrlKey){
 
             this.select(!this.selected);
@@ -365,7 +369,7 @@ export class Doc extends MapItem {
 
     makeDot(lines : string[]){
         const color = (this.wiki == undefined ? "black" : "blue");
-        lines.push(`b${this.id} [ label="${this.localTitle()}" id="${this.id}" class="doc" tooltip="　" fontsize="10" , fontcolor="${color}" ];` );
+        lines.push(`b${this.id} [ tooltip="${this.localTitle()}" id="${this.id}" shape = box width=0.5 height=0.5 class="doc" tooltip="　" fontsize="10" , fontcolor="${color}" ];` );
     }
 }
 

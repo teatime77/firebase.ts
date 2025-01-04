@@ -14,7 +14,7 @@ const $input_number = layout_ts.$input_number;
 const TT = i18n_ts.TT;
 
 export let rootFolder : DbFolder | null;
-let urlOrigin : string;
+export let urlOrigin : string;
 
 export abstract class DbItem {
     parent : DbFolder | null = null;
@@ -478,8 +478,6 @@ export async function showContents(read_doc?:(id:number)=>void, doc_text? : stri
     dlg.innerHTML = "";
 
     rootUL = document.createElement("ul");
-
-    [ urlOrigin, , ] = i18n_ts.parseURL();
 
     IdtoItem = new Map<string, DbItem>();
     makeFolderHtml(rootFolder, rootUL, read_doc, doc_text);

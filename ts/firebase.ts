@@ -112,6 +112,8 @@ export async function SignOut(){
 }
 
 export async function initFirebase() {
+    [ urlOrigin, , ] = i18n_ts.parseURL();
+
     setEvent();
 
     // Your web app's Firebase configuration
