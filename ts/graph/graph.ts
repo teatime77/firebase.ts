@@ -3,8 +3,14 @@ declare var Viz: any;
 
 namespace firebase_ts {
 //
+export let readDocFnc : (id : number) => Promise<void>;
+export let currentDoc : Doc | undefined;
+
+let focusedItem : MapItem | undefined;
+
 let dlgSet = new Set<string>();
-export function showDlg(ev : MouseEvent, dlg_id : string){    
+
+function showDlg(ev : MouseEvent, dlg_id : string){    
     const dlg = $dlg(dlg_id);
 
     dlg.style.left = `${ev.pageX}px`;
@@ -31,26 +37,32 @@ export let langIdx : number = 1;
 
 let showSubgraph : boolean = true;
 
-function makeImgFromNode(map_div : HTMLElement, doc : Doc, g : SVGGraphicsElement){
+function makeImgFromNode(map_div : HTMLElement, doc : Doc){
     if(doc.img == undefined){
 
         doc.img = document.createElement("img");
         doc.img.alt = doc.localTitle();
+        doc.img.title = doc.localTitle();
         doc.img.style.position = "absolute";
 
-        doc.img.addEventListener("click", doc.onVizClick.bind(doc));
+        doc.img.addEventListener("click", async (ev : MouseEvent)=>{
+            await doc.onVizClick(ev);
+        });
+
+        doc.img.addEventListener("contextmenu", (ev:MouseEvent)=>{
+            ev.preventDefault();
+            ev.stopPropagation();
+
+            focusedItem = doc;
+            showDlg(ev, "graph-doc-menu-dlg");
+        })
 
         firebase_ts.getThumbnailDownloadURL(doc.id).then((url:string)=>{
             doc.img!.src = url;
         });    
     }
 
-    const bbox = g.getBoundingClientRect();
-
-    doc.img.style.left = `${bbox.x + 2}px`;
-    doc.img.style.top  = `${bbox.y + 2}px`;
-    doc.img.style.width  = `${bbox.width  - 4}px`;
-    doc.img.style.height = `${bbox.height - 4}px`;
+    doc.setImgPos();
 
     map_div.append(doc.img);
 }
@@ -65,6 +77,10 @@ export class Graph {
         this.docs  = docs;
         this.sections = sections;
         this.edgeMap = edge_map;
+
+        window.addEventListener("resize", (ev : UIEvent)=>{
+            this.docs.forEach(doc => doc.setImgPos())
+        });
     }
 
     edges() : Edge[]{
@@ -115,16 +131,14 @@ export class Graph {
             svg.addEventListener("contextmenu", onMenu);
             svg.addEventListener("click", graph.onClick.bind(graph));
 
+            svg.style.width = `100vw`;
+            svg.style.height = `100vh`;
+        
+
             const map_div = $("map-div");
             map_div.innerHTML = "";
 
             map_div.appendChild(svg);
-
-            const rc = svg.getBoundingClientRect();
-
-            map_div.style.width = `${rc.width.toFixed()}px`;
-            map_div.style.height = `${rc.height.toFixed()}px`;
-
 
             const nodes = Array.from(svg.getElementsByClassName("node doc")) as SVGGElement[];
             for(const g of nodes){
@@ -135,12 +149,12 @@ export class Graph {
                 }
                 else{
 
-                    makeImgFromNode(map_div, doc, g);
-
                     const polygons = g.getElementsByTagName("polygon");
                     if(polygons.length == 1){
                         doc.polygon = polygons.item(0)!;
                     }
+
+                    makeImgFromNode(map_div, doc);
                 }
 
                 g.setAttribute("cursor", "pointer");
@@ -213,6 +227,18 @@ export class Graph {
         }
     }
 
+    async deleteDoc(doc : Doc){
+        remove(this.docs, focusedItem);
+        const edges = this.edges().filter(x => x.src != doc && x.dst != doc);
+        this.edgeMap = new Map<string, Edge>();
+        for(const edge of edges){
+            const key = edge.key();
+            this.edgeMap.set(key, edge);
+        }
+        
+        await updateGraph();
+    }
+
     clearSelections(){
         this.docs.filter(doc => doc.selected).forEach(doc => doc.select(false));
         this.selections = [];
@@ -220,15 +246,9 @@ export class Graph {
         this.edges().filter(edge => edge.selected).forEach(edge => edge.select(false));
     }
 
-    addDoc(title : string, wiki : string | undefined) : Doc {
-        let next_id = 1;
-        for(const doc of this.docs){
-            if(next_id < doc.id){
-                break;
-            }
-            next_id++;
-        }
-        const doc = new Doc(next_id, title, wiki);
+    addDoc(title : string, wiki : string | undefined) : Doc {        
+        const max_id = (this.docs.length == 0 ? 0 : Math.max(... this.docs.map(x => x.id)));
+        const doc = new Doc(max_id + 1, title, wiki);
         this.docs.push(doc);
 
         this.docs.sort((a:Doc, b:Doc) => a.id - b.id);
@@ -286,6 +306,18 @@ export class Graph {
 
 export let graph : Graph;
 
+export function getGraph() : Graph {
+    return graph;
+}
+
+export function hideGraph(){
+    $("map-div").style.display = "none";
+}
+
+export function showGraph(){
+    $("map-div").style.display = "inline-block";    
+}
+
 export class Section extends MapItem {
     polygon : SVGPolygonElement | undefined;
 
@@ -321,6 +353,8 @@ export class Section extends MapItem {
         $("add-section-to-section").onclick = this.addSectionToSection.bind(this);
         $("add-item-to-section").onclick = this.addItemToSection.bind(this);
         $("append-to-section").onclick = this.appendToSection.bind(this);
+
+        focusedItem = this;
         showDlg(ev, "graph-section-menu-dlg");
     }
 
@@ -449,6 +483,10 @@ export async function updateGraph(){
         edges : graph.edges().map(x => x.makeObj())
     };
 
+    if(! window.confirm("update DB?")){
+        return;
+    }
+
     try{
         await getDocRef("graph").set(graph_obj);
         msg(`update graph [${JSON.stringify(graph_obj, null, 4)}]`);
@@ -459,7 +497,7 @@ export async function updateGraph(){
 }
 
 export async function addGraphItem(){
-    const title = prompt();
+    const title = prompt("Enter a name for the new document.");
     msg(`input ${title}`);
     if(title == null){
         return;
@@ -478,6 +516,45 @@ export async function addGraphSection(){
     await updateGraph();
 }
 
+export async function renameDoc(){
+    if(focusedItem instanceof Doc){
+
+        const name = window.prompt("enter a new doc name.", focusedItem.title);
+        if(name != null && name.trim() != ""){
+
+            focusedItem.title = name.trim();
+            focusedItem.img!.title = focusedItem.localTitle();
+
+            await updateGraph();
+        }
+    }
+
+    focusedItem = undefined;
+}
+
+export async function renameSection(){
+    if(focusedItem instanceof Section){
+
+        const name = window.prompt("enter a new section name.", focusedItem.title);
+        if(name != null && name.trim() != ""){
+
+            focusedItem.title = name.trim();
+
+            await updateGraph();
+        }
+    }
+
+    focusedItem = undefined;
+}
+
+export async function deleteDoc(){
+    if(focusedItem instanceof Doc && window.confirm(`Are you sure you want to delete ${focusedItem.localTitle()}?`) ){
+        await graph.deleteDoc(focusedItem);
+    }
+
+    focusedItem = undefined;
+}
+
 export async function changeDisplay(){
     showSubgraph = ! showSubgraph;
     graph.makeViz();      
@@ -485,6 +562,26 @@ export async function changeDisplay(){
 
 function allMapItems() : MapItem[] {
     return (graph.docs as MapItem[]).concat(graph.sections);
+}
+
+export function getCurrentDoc() : Doc {
+    if(currentDoc == undefined){
+        throw new MyError();
+    }
+
+    return currentDoc;
+}
+
+export async function writeGraphDocDB(json_text : string){
+    const doc = getCurrentDoc();
+    const doc_obj = {
+        parent : -1,
+        id : doc.id,
+        name : doc.title,
+        text : json_text
+    };
+
+    await writeDB(`${doc.id}`, doc_obj);
 }
 
 }

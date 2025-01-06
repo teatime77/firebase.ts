@@ -209,8 +209,8 @@ export async function writeDB(id: string, doc_obj: any){
     }
 
     try{
-        await getDocRef(id).set(doc_obj);
         msg(`text:${doc_obj.text}`);
+        await getDocRef(id).set(doc_obj);
         msg(`write DB :id:${doc_obj.id} name:${doc_obj.name}`);
     }
     catch(e){
@@ -310,7 +310,7 @@ export async function getDoc(id : number){
         }
         const doc = rootFolder.findDoc(id);
         if(doc == undefined){
-            return undefined;
+            return new DbDoc(null, json.id, json.name, json.text);
         }
 
         doc.text = json.text;

@@ -10,7 +10,8 @@ function getThumbnailPath(doc_id : number) : string {
     return `users/${refId}/images/${doc_id}/thumbnail.png`;
 }
 
-export async function uploadCanvasImg(doc_id : number, canvas : HTMLCanvasElement) {
+export async function uploadCanvasImg(canvas : HTMLCanvasElement) {
+    const doc = getCurrentDoc();
     // Get canvas data as a Blob
     const dataURL = canvas.toDataURL('image/png'); 
     const res  = await fetch(dataURL);
@@ -21,7 +22,7 @@ export async function uploadCanvasImg(doc_id : number, canvas : HTMLCanvasElemen
         var storageRef = firebase.storage().ref();
 
         // Create a reference to 'images/mountains.jpg'
-        const path = getThumbnailPath(doc_id);
+        const path = getThumbnailPath(doc.id);
         var img_ref = storageRef.child(path);
 
         const snap = await img_ref.put(blob);
@@ -80,8 +81,15 @@ export async function getStorageDownloadURL(path : string){
 
 export async function getThumbnailDownloadURL(doc_id : number) : Promise<string> {
     const path = getThumbnailPath(doc_id);
-    const url = await getStorageDownloadURL(path);
-    return url;
+    try{
+
+        const url = await getStorageDownloadURL(path);
+        return url;
+    }
+    catch(e){
+        msg(`no thumbnail:${path} ${e}`);
+        return `${urlOrigin}/lib/plane/img/blank.png`;
+    }
 }
 
 }

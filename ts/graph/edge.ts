@@ -2,6 +2,7 @@ namespace firebase_ts {
 
 let edge_Map = new Map<string, Edge>();
 let selectedDoc : Doc | null = null;
+let closeGraphButton : HTMLButtonElement | undefined;
 
 export function edgeKey(doc1 : Doc, doc2 : Doc) : string {
     return `${doc1.id}:${doc2.id}`;
@@ -120,9 +121,17 @@ async function loadGraph() : Promise<[Doc[], Section[], Map<string, Edge>]>{
     return [docs, sections, edge_map];
 }
 
-export async function makeDocsFromRootFolder(){
+export async function makeDocsGraph(){
     const map_div = document.createElement("div");
     map_div.id = "map-div";
+
+    map_div.style.position = "absolute";
+    map_div.style.left = `0`;
+    map_div.style.top  = `0`;
+    map_div.style.width = `100vw`;
+    map_div.style.height = `100vh`;
+    map_div.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
+
     document.body.append(map_div);
 
     const [docs, sections, edge_map] = await loadGraph();
@@ -334,7 +343,7 @@ export class Doc extends MapItem {
         }
     }
 
-    onVizClick(ev : MouseEvent){
+    async onVizClick(ev : MouseEvent){
         ev.stopPropagation();
         ev.preventDefault();
 
@@ -364,12 +373,40 @@ export class Doc extends MapItem {
                 msg(`open wiki: ${this.id} ${this.title} url:${new_url}`);
                 window.open(new_url, "_blank");
             }
+            else{
+                graph.selections = [this];
+                this.select(true);
+                currentDoc = this;
+
+                hideGraph();
+                if(closeGraphButton == undefined){
+
+                    closeGraphButton = $("close-graph") as HTMLButtonElement;
+                    closeGraphButton.addEventListener("click", (ev:MouseEvent)=>{
+                        closeGraphButton!.style.display = "none";
+                        showGraph();
+                    });
+                }
+                closeGraphButton.style.display = "inline-block";
+                await readDocFnc(this.id)
+            }
         }
     }
 
     makeDot(lines : string[]){
         const color = (this.wiki == undefined ? "black" : "blue");
         lines.push(`b${this.id} [ tooltip="${this.localTitle()}" id="${this.id}" shape = box width=0.5 height=0.5 class="doc" tooltip="　" fontsize="10" , fontcolor="${color}" ];` );
+    }
+
+    setImgPos(){
+        if(this.img != undefined && this.polygon != undefined){
+            const bbox = this.polygon.getBoundingClientRect();
+
+            this.img.style.left = `${bbox.x + 2}px`;
+            this.img.style.top  = `${bbox.y + 2}px`;
+            this.img.style.width  = `${bbox.width  - 4}px`;
+            this.img.style.height = `${bbox.height - 4}px`;        
+        }
     }
 }
 
