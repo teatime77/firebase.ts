@@ -57,9 +57,16 @@ function makeImgFromNode(map_div : HTMLElement, doc : Doc){
             showDlg(ev, "graph-doc-menu-dlg");
         })
 
-        firebase_ts.getThumbnailDownloadURL(doc.id).then((url:string)=>{
-            doc.img!.src = url;
-        });    
+        if(doc.imgURL != ""){
+            doc.img!.src = doc.imgURL;
+        }
+        else{
+
+            firebase_ts.getThumbnailDownloadURL(doc.id).then((url:string)=>{
+                doc.imgURL = url;
+                doc.img!.src = url;
+            });
+        }
     }
 
     doc.setImgPos();
@@ -122,7 +129,6 @@ export class Graph {
             ${ranks.join('\n')}
         }
         `;
-        msg(`dot:${dot}`);
 
         Viz.instance().then(async function(viz:any) {
 
@@ -483,13 +489,15 @@ export async function updateGraph(){
         edges : graph.edges().map(x => x.makeObj())
     };
 
+    msg(`update graph [${JSON.stringify(graph_obj, null, 4)}]`);
+
     if(! window.confirm("update DB?")){
         return;
     }
 
     try{
         await getDocRef("graph").set(graph_obj);
-        msg(`update graph [${JSON.stringify(graph_obj, null, 4)}]`);
+        msg(`update graph OK`);
     }
     catch(e){
         msg(`update graph error: ${user.email} ref:${refId} ${e}`);

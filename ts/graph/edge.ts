@@ -74,7 +74,7 @@ async function loadGraph() : Promise<[Doc[], Section[], Map<string, Edge>]>{
     const parent_items : [number, MapItem][] = [];
 
     for(const doc_obj of graph_obj.docs){
-        const doc = new Doc(doc_obj.id, doc_obj.title, undefined);
+        const doc = new Doc(doc_obj.id, doc_obj.title, doc_obj.imgURL);
         doc_map.set(doc.id, doc);
 
         if(doc_obj.parent != -1){
@@ -278,10 +278,20 @@ export class Doc extends MapItem {
     width  : number = NaN;
     height : number = NaN;
 
+    imgURL : string = "";
     img : HTMLImageElement | undefined;
 
-    constructor(id : number, title : string, wiki : string | undefined){
-        super(id, title, wiki);
+    constructor(id : number, title : string, imgURL : string | undefined){
+        super(id, title, undefined);
+        if(imgURL != undefined){
+            this.imgURL = imgURL;
+        }
+    }
+    
+    makeObj() : any {
+        return Object.assign(super.makeObj(), {
+            imgURL  : this.imgURL,
+        });
     }
 
     setColor(color : string){
