@@ -1,4 +1,5 @@
 namespace firebase_ts {
+export const TT = i18n_ts.TT;
 
 let edge_Map = new Map<string, Edge>();
 let selectedDoc : Doc | null = null;
@@ -242,16 +243,6 @@ export class MapItem {
         };
     }
 
-    localTitle() : string {
-        const titles = this.title.split(":");
-        if(langIdx < titles.length && titles[langIdx] != ""){
-            return titles[langIdx];
-        }
-        else{
-            return titles[0];
-        }
-    }
-
     jsonStr() : string {
         let wiki = this.wiki == undefined ? "" : `, "wiki":"${this.wiki}"`;
 
@@ -357,7 +348,7 @@ export class Doc extends MapItem {
         ev.stopPropagation();
         ev.preventDefault();
 
-        msg(`img : ${this.id} ${this.localTitle()}`);
+        msg(`img : ${this.id} ${TT(this.title)}`);
 
         if(ev.ctrlKey){
 
@@ -405,7 +396,7 @@ export class Doc extends MapItem {
 
     makeDot(lines : string[]){
         const color = (this.wiki == undefined ? "black" : "blue");
-        lines.push(`b${this.id} [ tooltip="${this.localTitle()}" id="${this.id}" shape = box width=0.5 height=0.5 class="doc" tooltip="　" fontsize="10" , fontcolor="${color}" ];` );
+        lines.push(`b${this.id} [ tooltip="${this.id}:${TT(this.title)}" id="${this.id}" shape = box width=0.5 height=0.5 class="doc" tooltip="　" fontsize="10" , fontcolor="${color}" ];` );
     }
 
     setImgPos(){

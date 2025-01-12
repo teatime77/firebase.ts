@@ -41,8 +41,8 @@ function makeImgFromNode(map_div : HTMLElement, doc : Doc){
     if(doc.img == undefined){
 
         doc.img = document.createElement("img");
-        doc.img.alt = doc.localTitle();
-        doc.img.title = doc.localTitle();
+        doc.img.alt = TT(doc.title);
+        doc.img.title = `${doc.id}:${TT(doc.title)}`;
         doc.img.style.position = "absolute";
 
         doc.img.addEventListener("click", async (ev : MouseEvent)=>{
@@ -399,7 +399,7 @@ export class Section extends MapItem {
     makeDot(lines : string[]){
         lines.push(`subgraph cluster_${this.id} {`);
         lines.push(`    id = "s${this.id}";`);
-        lines.push(`    label = "${this.localTitle()}";`);
+        lines.push(`    label = "${TT(this.title)}";`);
         lines.push(`    labelloc  = "b";`);
         lines.push(`    labeljust = "l";`);
         lines.push(`    bgcolor   = "cornsilk";`);
@@ -531,7 +531,7 @@ export async function renameDoc(){
         if(name != null && name.trim() != ""){
 
             focusedItem.title = name.trim();
-            focusedItem.img!.title = focusedItem.localTitle();
+            focusedItem.img!.title = TT(focusedItem.title);
 
             await updateGraph();
         }
@@ -556,7 +556,7 @@ export async function renameSection(){
 }
 
 export async function deleteDoc(){
-    if(focusedItem instanceof Doc && window.confirm(`Are you sure you want to delete ${focusedItem.localTitle()}?`) ){
+    if(focusedItem instanceof Doc && window.confirm(`Are you sure you want to delete ${TT(focusedItem.title)}?`) ){
         await graph.deleteDoc(focusedItem);
     }
 
