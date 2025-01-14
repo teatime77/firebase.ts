@@ -252,6 +252,10 @@ export class Graph {
         this.edges().filter(edge => edge.selected).forEach(edge => edge.select(false));
     }
 
+    getDocById(doc_id : number) : Doc | undefined {
+        return this.docs.find(x => x.id == doc_id);
+    }
+
     addDoc(title : string, wiki : string | undefined) : Doc {        
         const max_id = (this.docs.length == 0 ? 0 : Math.max(... this.docs.map(x => x.id)));
         const doc = new Doc(max_id + 1, title, wiki);

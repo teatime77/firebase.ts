@@ -141,9 +141,6 @@ export async function makeDocsGraph(){
 
     $("remove-from-section").onclick = graph.removeFromSection.bind(graph);
     $("connect-edge").addEventListener("click", graph.connectEdge.bind(graph));
-    $("update-graph").addEventListener("click", async (ev:MouseEvent)=>{
-        await updateGraph();
-    })
     document.body.addEventListener("keydown", graph.onKeyDown.bind(graph));
 
     graph.makeViz();        
