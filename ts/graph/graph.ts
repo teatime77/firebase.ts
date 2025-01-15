@@ -242,7 +242,26 @@ export class Graph {
             this.edgeMap.set(key, edge);
         }
         
-        await updateGraph();
+        const graph_obj = getGraphObj();
+
+        const db = getDB();
+
+        try{
+            let batch = db.batch();
+    
+            const doc_ref = getDocRef(`${doc.id}`);
+            batch.delete(doc_ref);
+
+            const graph_ref = getDocRef("graph");
+            batch.set(graph_ref, graph_obj);
+    
+            await batch.commit();
+                
+            msg("delete doc OK");
+        }
+        catch(e){
+            throw new MyError(`${e}`);
+        }        
     }
 
     clearSelections(){
@@ -479,7 +498,7 @@ export async function bodyOnLoadGraph(){
 */
 }
 
-export async function updateGraph(){
+function getGraphObj(){
     graph.makeViz();        
 
     if(user == null || rootFolder == null || refId == undefined){
@@ -493,6 +512,12 @@ export async function updateGraph(){
         edges : graph.edges().map(x => x.makeObj())
     };
 
+    return graph_obj;
+}
+
+export async function updateGraph(){
+    const graph_obj = getGraphObj();
+
     msg(`update graph [${JSON.stringify(graph_obj, null, 4)}]`);
 
     if(! window.confirm("update DB?")){
@@ -504,7 +529,7 @@ export async function updateGraph(){
         msg(`update graph OK`);
     }
     catch(e){
-        msg(`update graph error: ${user.email} ref:${refId} ${e}`);
+        msg(`update graph error: ${user!.email} ref:${refId} ${e}`);
     }
 }
 
