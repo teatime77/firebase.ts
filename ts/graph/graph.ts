@@ -41,8 +41,6 @@ function makeImgFromNode(map_div : HTMLElement, doc : Doc){
     if(doc.img == undefined){
 
         doc.img = document.createElement("img");
-        doc.img.alt = TT(doc.title);
-        doc.img.title = `${doc.id}:${TT(doc.title)}`;
         doc.img.style.position = "absolute";
 
         doc.img.addEventListener("click", async (ev : MouseEvent)=>{
@@ -69,9 +67,14 @@ function makeImgFromNode(map_div : HTMLElement, doc : Doc){
         }
     }
 
+    doc.tooltip = document.createElement("span");
+    doc.tooltip.className = "tooltip";
+    doc.tooltip.innerText = `${doc.id}:${TT(doc.title)}`;
+
     doc.setImgPos();
 
     map_div.append(doc.img);
+    map_div.append(doc.tooltip);
 }
 
 export class Graph {

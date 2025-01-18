@@ -268,6 +268,7 @@ export class Doc extends MapItem {
 
     imgURL : string = "";
     img : HTMLImageElement | undefined;
+    tooltip : HTMLSpanElement | undefined;
 
     constructor(id : number, title : string, imgURL : string | undefined){
         super(id, title, undefined);
@@ -403,7 +404,10 @@ export class Doc extends MapItem {
             this.img.style.left = `${bbox.x + 2}px`;
             this.img.style.top  = `${bbox.y + 2}px`;
             this.img.style.width  = `${bbox.width  - 4}px`;
-            this.img.style.height = `${bbox.height - 4}px`;        
+            this.img.style.height = `${bbox.height - 4}px`;       
+            
+            this.tooltip!.style.left = `${bbox.right}px`;
+            this.tooltip!.style.top  = `${bbox.top}px`;
         }
     }
 }
