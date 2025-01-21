@@ -69,7 +69,12 @@ function makeImgFromNode(map_div : HTMLElement, doc : Doc){
 
     doc.tooltip = document.createElement("span");
     doc.tooltip.className = "tooltip";
-    doc.tooltip.innerText = `${doc.id}:${TT(doc.title)}`;
+    if(i18n_ts.appMode == i18n_ts.AppMode.edit){
+        doc.tooltip.innerText = `${doc.id}:${TT(doc.title)}`;
+    }
+    else{
+        doc.tooltip.innerText = `${TT(doc.title)}`;
+    }
 
     doc.setImgPos();
 

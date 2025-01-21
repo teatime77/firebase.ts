@@ -393,8 +393,12 @@ export class Doc extends MapItem {
     }
 
     makeDot(lines : string[]){
+        if([4, 54].includes(this.id)){
+            msg(`skip doc:${this.id} ${this.title}`);
+            return;
+        }
         const color = (this.wiki == undefined ? "black" : "blue");
-        lines.push(`b${this.id} [ tooltip="${this.id}:${TT(this.title)}" id="${this.id}" shape = box width=0.5 height=0.5 class="doc" tooltip="　" fontsize="10" , fontcolor="${color}" ];` );
+        lines.push(`b${this.id} [ tooltip="${TT(this.title)}" id="${this.id}" shape = box width=0.5 height=0.5 class="doc" tooltip="　" fontsize="10" , fontcolor="${color}" ];` );
     }
 
     setImgPos(){
