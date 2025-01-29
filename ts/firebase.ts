@@ -18,7 +18,8 @@ export async function makeRootFolder() : Promise<DbFolder> {
         root : {
             id   : 0,
             name : "root",
-            children : []
+            children : [],
+            parent : -1
         }
     };
 
