@@ -53,7 +53,11 @@ function makeImgFromNode(map_div : HTMLElement, doc : Doc){
 
             focusedItem = doc;
             showDlg(ev, "graph-doc-menu-dlg");
-        })
+        });
+
+        doc.img.addEventListener("mouseenter", (ev : MouseEvent)=>{
+            msg(`tooltip:${doc.id} ${TT(doc.title)}`);
+        });
 
         if(doc.imgURL != ""){
             doc.img!.src = doc.imgURL;
