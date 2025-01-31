@@ -396,11 +396,7 @@ export class Doc extends MapItem {
     }
 
     makeDot(lines : string[]){
-        if(this.id == 4){
-            msg(`skip doc:${this.id} ${this.title}`);
-            return;
-        }
-        if(this.id == 54 && i18n_ts.appMode != i18n_ts.AppMode.edit){
+        if(this.title == "@test" && i18n_ts.appMode != i18n_ts.AppMode.edit){
             msg(`skip doc:${this.id} ${this.title}`);
             return;
         }
