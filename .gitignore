@@ -12,6 +12,7 @@ public/lib/parser
 public/lib/i18n
 public/lib/layout
 public/lib/media
+public/lib/algebra
 public/movie.html
 public/i18n.html
 public/index.html
