@@ -378,7 +378,6 @@ export class Doc extends MapItem {
             else{
                 graph.selections = [this];
                 this.select(true);
-                currentDoc = this;
 
                 hideGraph();
                 if(closeGraphButton == undefined){

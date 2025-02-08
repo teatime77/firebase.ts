@@ -10,8 +10,7 @@ function getThumbnailPath(doc_id : number) : string {
     return `users/${refId}/images/${doc_id}/thumbnail.png`;
 }
 
-export async function uploadCanvasImg(canvas : HTMLCanvasElement) {
-    const doc = getCurrentDoc();
+export async function uploadCanvasImg(doc_id : number, canvas : HTMLCanvasElement) {
     // Get canvas data as a Blob
     const dataURL = canvas.toDataURL('image/png'); 
     const res  = await fetch(dataURL);
@@ -22,7 +21,7 @@ export async function uploadCanvasImg(canvas : HTMLCanvasElement) {
         var storageRef = firebase.storage().ref();
 
         // Create a reference to 'images/mountains.jpg'
-        const path = getThumbnailPath(doc.id);
+        const path = getThumbnailPath(doc_id);
         var img_ref = storageRef.child(path);
 
         const snap = await img_ref.put(blob);

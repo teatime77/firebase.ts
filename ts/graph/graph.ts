@@ -4,7 +4,6 @@ declare var Viz: any;
 namespace firebase_ts {
 //
 export let readDocFnc : (id : number) => Promise<void>;
-export let currentDoc : Doc | undefined;
 
 let focusedItem : MapItem | undefined;
 
@@ -613,24 +612,15 @@ function allMapItems() : MapItem[] {
     return (graph.docs as MapItem[]).concat(graph.sections);
 }
 
-export function getCurrentDoc() : Doc {
-    if(currentDoc == undefined){
-        throw new MyError();
-    }
-
-    return currentDoc;
-}
-
-export async function writeGraphDocDB(json_text : string){
-    const doc = getCurrentDoc();
+export async function writeGraphDocDB(doc_id : number, doc_name : string, json_text : string){
     const doc_obj = {
         parent : -1,
-        id : doc.id,
-        name : doc.title,
+        id : doc_id,
+        name : doc_name,
         text : json_text
     };
 
-    await writeDB(`${doc.id}`, doc_obj);
+    await writeDB(`${doc_id}`, doc_obj);
 }
 
 export async function copyAllGraph(){
