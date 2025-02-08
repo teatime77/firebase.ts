@@ -13,18 +13,29 @@ export let refId : string | undefined = defaultRefId;
 let default_user_id = "1";
 
 export async function makeRootFolder() : Promise<DbFolder> {
-    const initial_data = {
-        version : 1.0,
-        root : {
-            id   : 0,
-            name : "root",
-            children : [],
-            parent : -1
-        }
-    };
-
-    let obj = await fetchDB("index", initial_data);
+    let obj = await fetchDB("index");
     if(obj == undefined){
+
+        if(window.confirm("No index data.\nDo you want to initialize index data?")){
+
+            const initial_data = {
+                version : 1.0,
+                root : {
+                    id   : 0,
+                    name : "root",
+                    children : [],
+                    parent : -1
+                }
+            };
+        
+            await writeDB("index", initial_data);
+
+            obj = await fetchDB("index");
+            if(obj == undefined){
+                throw new MyError("no index in DB");
+            }
+        }
+
         throw new MyError("no index in DB");
     }
 
@@ -210,7 +221,7 @@ export async function writeDB(id: string, doc_obj: any){
     }
 
     try{
-        msg(`text:${doc_obj.text}`);
+        // msg(`text:${doc_obj.text}`);
         await getDocRef(id).set(doc_obj);
         msg(`write DB :id:${doc_obj.id} name:${doc_obj.name}`);
     }
@@ -264,9 +275,9 @@ export async function getUserData() {
 }
 
 
-export async function fetchDB(id: string, initial_data : any | undefined = undefined) {
+export async function fetchDB(id: string, ref_id = refId) {
     try{
-        let doc_data = await getDocRef(id).get();
+        let doc_data = await getDocRef(id, ref_id).get();
         if(doc_data.exists){
             const data = doc_data.data();
             // msg(`read DB OK:${data}`);
@@ -275,14 +286,6 @@ export async function fetchDB(id: string, initial_data : any | undefined = undef
         else{
 
             msg(`no data:${id}`);
-            if(initial_data != undefined){
-                if(window.confirm("No index data.\nDo you want to initialize index data?")){
-
-                    await writeDB(id, initial_data);
-                    return initial_data;
-                }
-            }
-
             return undefined;
         }
     }
@@ -298,8 +301,8 @@ export async function fetchDB(id: string, initial_data : any | undefined = undef
     }
 }
 
-export async function getDoc(id : number){
-    const json = await fetchDB(`${id}`);
+export async function getDoc(id : number, ref_id = refId){
+    const json = await fetchDB(`${id}`, ref_id);
     if(json == undefined){
         msg(`no doc:${id}`);
         return undefined;

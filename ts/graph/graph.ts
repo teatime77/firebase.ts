@@ -633,4 +633,31 @@ export async function writeGraphDocDB(json_text : string){
     await writeDB(`${doc.id}`, doc_obj);
 }
 
+export async function copyAllGraph(){
+    let graph_obj = await fetchDB("graph", defaultRefId);
+    if(graph_obj == undefined){
+        throw new MyError("no graph data");
+    }
+
+    const docs = new Map<string, firebase.firestore.DocumentData>();
+    for(const doc_obj of graph_obj.docs){
+        const id = `${doc_obj.id}`;
+        const doc = await fetchDB(id, defaultRefId);
+        if(doc == undefined){
+            msg(`no doc:${id} ${doc_obj.title}`);
+            continue;
+        }
+
+        msg(`read doc:${id} ${doc.name}`);
+        docs.set(id, doc);
+    }
+
+    await writeDB("graph", graph_obj);
+    for(const [id, doc] of docs.entries()){
+        await writeDB(id, doc);
+    }
+
+    msg("copyAllGraph completes.")
+}
+
 }
