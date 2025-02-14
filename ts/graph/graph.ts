@@ -4,6 +4,7 @@ declare var Viz: any;
 namespace firebase_ts {
 //
 export let readDocFnc : (id : number) => Promise<void>;
+export const dataVersion = 2.1;
 
 let focusedItem : MapItem | undefined;
 
@@ -545,13 +546,43 @@ export async function updateGraph(){
 }
 
 export async function addGraphItem(){
-    const title = prompt("Enter a name for the new document.");
-    msg(`input ${title}`);
-    if(title == null){
+    let doc_name = prompt("Enter a name for the new document.");
+    msg(`input ${doc_name}`);
+    if(doc_name == null){
         return;
     }
-    graph.addDoc(title, undefined);
-    await updateGraph();
+
+    doc_name = doc_name.trim();
+    const doc = graph.addDoc(doc_name, undefined);
+
+    const data = {
+        version : dataVersion,
+        operations : []
+    };
+
+    const data_text = JSON.stringify(data, null, 4);
+    const doc_obj = getDocObj(doc.id, doc_name, data_text);
+
+    const graph_obj = getGraphObj();
+
+    const db = getDB();
+
+    try{
+        let batch = db.batch();
+
+        const doc_ref = getDocRef(`${doc.id}`);
+        batch.set(doc_ref, doc_obj);
+
+        const graph_ref = getDocRef("graph");
+        batch.set(graph_ref, graph_obj);
+
+        await batch.commit();
+            
+        msg("add-Graph-Item OK");
+    }
+    catch(e){
+        throw new MyError(`${e}`);
+    }        
 }
 
 export async function addGraphSection(){
@@ -612,13 +643,17 @@ function allMapItems() : MapItem[] {
     return (graph.docs as MapItem[]).concat(graph.sections);
 }
 
-export async function writeGraphDocDB(doc_id : number, doc_name : string, json_text : string){
-    const doc_obj = {
+export function getDocObj(doc_id : number, doc_name : string, json_text : string) : any {
+    return {
         parent : -1,
         id : doc_id,
         name : doc_name,
         text : json_text
     };
+}
+
+export async function writeGraphDocDB(doc_id : number, doc_name : string, json_text : string){
+    const doc_obj = getDocObj(doc_id, doc_name, json_text);
 
     await writeDB(`${doc_id}`, doc_obj);
 }

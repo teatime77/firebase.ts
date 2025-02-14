@@ -40,7 +40,7 @@ export function $dlg(id : string) : HTMLDialogElement {
 
 export function remove<T>(v : Array<T>, x : T){
     const idx = v.indexOf(x);
-    assert(idx != undefined);
+    assert(idx != -1);
     v.splice(idx, 1);
 }
 
