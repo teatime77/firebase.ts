@@ -1,5 +1,7 @@
 namespace firebase_ts {
 //
+export const remove  = i18n_ts.remove;
+
 export class MyError extends Error {
     constructor(text : string = ""){
         super(text);
@@ -36,12 +38,6 @@ export function $inp(id : string) : HTMLInputElement {
 
 export function $dlg(id : string) : HTMLDialogElement {
     return $(id) as HTMLDialogElement;
-}
-
-export function remove<T>(v : Array<T>, x : T){
-    const idx = v.indexOf(x);
-    assert(idx != -1);
-    v.splice(idx, 1);
 }
 
 
