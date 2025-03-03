@@ -388,7 +388,7 @@ function makeFolderHtml(item : DbItem, ul : HTMLUListElement, read_doc?:(id:numb
             menu = $popup({
                 children : [
                     $button({
-                        text : TT("new doc"),
+                        text : TT("new document"),
                         fontSize : "large",
                         click : async (ev : MouseEvent)=>{                                
                             const parent = (item instanceof DbFolder ? item : item.parent!);

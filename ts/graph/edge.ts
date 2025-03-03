@@ -122,6 +122,18 @@ async function loadGraph() : Promise<[Doc[], Section[], Map<string, Edge>]>{
     const docs = Array.from(doc_map.values());
     const sections = Array.from(section_map.values());
 
+    const titles = i18n_ts.unique((docs as (Doc | Section)[]).concat(sections).map(x => x.title));
+    let   idx = Math.max(... i18n_ts.EngTextToId.values()) + 1;
+    msg("==============================> titles")
+    for(const title of titles){
+        const id = i18n_ts.EngTextToId.get(title);
+        if(id == undefined){
+            msg(`${idx}:${title}`);
+            idx++;
+        }
+    }
+    msg("==============================< titles")
+
     return [docs, sections, edge_map];
 }
 

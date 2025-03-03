@@ -598,7 +598,7 @@ export async function addGraphSection(){
 export async function renameDoc(){
     if(focusedItem instanceof Doc){
 
-        const name = window.prompt("enter a new doc name.", focusedItem.title);
+        const name = window.prompt("enter a new document name.", focusedItem.title);
         if(name != null && name.trim() != ""){
 
             focusedItem.title = name.trim();
