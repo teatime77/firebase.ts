@@ -1,6 +1,7 @@
 namespace firebase_ts {
 //
 export const remove  = i18n_ts.remove;
+export const sleep = i18n_ts.sleep;
 
 export class MyError extends Error {
     constructor(text : string = ""){
@@ -38,15 +39,6 @@ export function $inp(id : string) : HTMLInputElement {
 
 export function $dlg(id : string) : HTMLDialogElement {
     return $(id) as HTMLDialogElement;
-}
-
-
-export async function sleep(milliseconds : number) : Promise<void> {
-    return new Promise((resolve) => {
-        setTimeout(()=>{
-            resolve();
-        }, milliseconds);
-    });
 }
 
 export function generateRandomString(length : number) {
