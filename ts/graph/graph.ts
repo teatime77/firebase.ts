@@ -673,7 +673,7 @@ export async function copyAllGraph(){
             continue;
         }
 
-        msg(`read doc:${id} ${doc.name}`);
+        // msg(`read doc:${id} ${doc.name}`);
         docs.set(id, doc);
     }
 
