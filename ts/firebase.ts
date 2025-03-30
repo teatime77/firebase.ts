@@ -7,7 +7,7 @@ let db: firebase.firestore.Firestore;
 
 let app  : firebase.app.App;
 export let user : firebase.User | null = null;
-export const defaultRefId = "ZsPosM7CtPqEYgWz"; // "rts6BilvSSyWqLwD"; // "aNv8XFLZddFpYNoB";
+export const defaultRefId = "KDxW7CoFYGYpmlON"; // "ZsPosM7CtPqEYgWz" "rts6BilvSSyWqLwD"; // "aNv8XFLZddFpYNoB";
 export let refId : string | undefined = defaultRefId;
 
 let default_user_id = "1";
