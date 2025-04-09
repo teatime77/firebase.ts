@@ -141,6 +141,116 @@ export class DbFolder extends DbItem {
     }
 }
 
+export class BackUp {
+    db : firebase.firestore.Firestore;
+    batch : firebase.firestore.WriteBatch;
+    date_str : string;
+    docIds : number[] = [];
+
+    constructor(){
+        this.db = getDB();
+        try{
+
+            this.batch = this.db.batch();
+        }
+        catch(e){
+            throw new MyError(`BackUp error: ${e}`);
+        }
+
+        this.date_str = firebase_ts.dateString();
+    }
+
+    async writeBackUp(doc_id : number, doc_name : string, json_text : string){
+        if(user == null || refId == undefined){
+            throw new MyError();
+        }
+    
+        const doc_obj = getDocObj(doc_id, doc_name, json_text);
+
+        try{
+            const doc_id_str = `${doc_id}`;
+            const doc_ref = this.db.collection('users').doc(user.uid).collection('backup').doc(this.date_str).collection('docs').doc(doc_id_str);
+            await this.batch.set(doc_ref, doc_obj);
+        }
+        catch(e){
+            msg(`write BackUp error: ${user.email} ref:${refId} ${e}`);
+        }
+
+        this.docIds.push(doc_id);
+    }
+
+    async commitBackUp(){
+        if(user == null || refId == undefined){
+            throw new MyError();
+        }
+
+        const index_obj = {
+            docIds : this.docIds
+        };
+
+        try{
+            const index_ref = this.db.collection('users').doc(user.uid).collection('backup').doc(this.date_str).collection('docs').doc("index");
+            await this.batch.set(index_ref, index_obj);
+
+            await this.batch.commit();
+        }
+        catch(e){
+            msg(`commit BackUp error: ${e}`);
+        }
+
+        const user_data = await getUserData();
+        if(user_data == undefined){
+            throw new MyError(`no user data`);
+        }
+        else{
+            user_data.latestBackup = this.date_str;
+            await setUserData(user_data);
+
+            msg("commit BackUp");
+        }
+    }
+}
+
+export async function* getBackUp(){
+    if(user == null){
+        throw new MyError();
+    }
+
+    const db = getDB();
+
+    const user_data = await getUserData();
+    if(user_data == undefined){
+        throw new MyError();
+    }
+
+    const date_str = user_data.latestBackup as string;
+    if(date_str == undefined){
+        throw new MyError();
+    }
+
+    const index_ref = db.collection('users').doc(user.uid).collection('backup').doc(date_str).collection('docs').doc("index");
+    const index_obj = await getDbData(index_ref);
+    if(index_obj == undefined){
+        throw new MyError();
+    }
+
+    const docIds = index_obj.docIds as number[];
+    if(docIds == undefined){
+        throw new MyError();
+    }
+
+    for(const doc_id of docIds){
+        msg(`doc-Ids : ${docIds}`);
+
+        const doc_id_str = `${doc_id}`;
+        const doc_ref = db.collection('users').doc(user.uid).collection('backup').doc(date_str).collection('docs').doc(doc_id_str);
+        const doc_obj = await getDbData(doc_ref);
+
+        yield doc_obj;
+    }
+
+}
+
 export function getNewId() : number {
     if(rootFolder == null){
         throw new MyError();
@@ -495,71 +605,6 @@ export async function getRootFolder() : Promise<DbFolder> {
     return rootFolder;
 }
 
-export async function getAllDbItems(){
-    await getRootFolder();
-
-    const items : DbItem[] = [];
-    rootFolder!.getAll(items);
-
-    return items;
-}
-
-export async function BackUp(){
-    if(refId == undefined || user == null){
-        throw new MyError();
-    }
-
-    const items = await getAllDbItems();
-
-    const docs : DbDoc[] = items.filter(x => x instanceof DbDoc) as DbDoc[];
-
-    for(const doc of docs){
-        const json = await fetchDB(`${doc.id}`);
-        if(json == undefined){
-            msg(`no doc:${doc}`);
-            return undefined;
-        }
-
-        doc.text = json.text;
-        let obj = doc.makeObj();
-
-        msg(`doc:${obj.id} ${obj.name} ${obj.parent} [${obj.text}]`);
-    }
-
-    const date_str = dateString();
-
-    const db = getDB();
-
-    try{
-        const backup_ref = db.collection('users').doc(user.uid).collection('backup').doc(date_str).collection('docs');
-
-        let batch = db.batch();
-
-        for(const doc of docs){
-
-            let doc_obj = doc.makeObj();
-
-            let docRef = backup_ref.doc(`${doc.id}`);
-            batch.set(docRef, doc_obj);
-        }
-
-        const index_obj = {
-            version : 1.0,
-            root : rootFolder!.makeIndex()
-        };
-        msg(`index:${JSON.stringify(index_obj.root, null, 4)}`);
-
-        let idxRef = backup_ref.doc("index");
-        batch.set(idxRef, index_obj);
-
-        await batch.commit();
-        
-        msg(`back up completes.[${date_str}]`);
-    }
-    catch(e){
-        throw new MyError(`${e}`);
-    }        
-}
 
 export async function deleteDocDB(doc : DbDoc){
     if(! window.confirm(`Are you sure you want to delete ${doc.name}?`)){

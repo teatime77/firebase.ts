@@ -403,4 +403,16 @@ export function getUser() : firebase.User | null {
     return user;
 }
 
+export async function getDbData(doc_ref : firebase.firestore.DocumentReference<firebase.firestore.DocumentData>){
+    const doc_data = await doc_ref.get();
+    if(doc_data.exists){
+        const data = doc_data.data();
+        if(data != undefined){
+            return data;
+        }
+    }
+
+    throw new MyError();
+}
+
 }
