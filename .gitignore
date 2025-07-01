@@ -15,6 +15,7 @@ public/lib/lesson
 public/lib/media
 public/lib/algebra
 public/lib/webgpu
+public/lib/diagram
 public/movie.html
 public/i18n.html
 public/index.html
@@ -22,3 +23,4 @@ public/algebra.html
 firestore.rules
 public/lesson.html
 public/webgpu.html
+public/diagram.html
