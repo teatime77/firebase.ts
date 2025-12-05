@@ -16,6 +16,7 @@ public/lib/media
 public/lib/algebra
 public/lib/webgpu
 public/lib/diagram
+public/lib/game
 public/movie.html
 public/i18n.html
 public/index.html
