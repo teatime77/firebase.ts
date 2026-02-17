@@ -1,14 +1,25 @@
 ///<reference path="edge.ts" />
+
+import { getFirestore, Firestore, writeBatch, doc, getDoc, setDoc, DocumentReference, DocumentData } from 'firebase/firestore';
+
+import { msg, TT, $, $dlg, assert, remove, MyError, appMode, AppMode } from "@i18n";
+import { getDB, getDocRef, user, refId, writeDB, fetchDB, defaultRefId, rootFolder } from "../firebase";
+import { MapItem, Doc, Edge, getEdge, addEdge } from "./edge";
+import { getThumbnailDownloadURL } from "../storage";
+
 declare var Viz: any;
 
-namespace firebase_ts {
-//
-export let readDocFnc : (id : number) => Promise<void>;
 export const dataVersion = 2.1;
 
 let focusedItem : MapItem | undefined;
 
 let dlgSet = new Set<string>();
+
+
+
+export function setGraph(graph_arg : Graph){
+    graph = graph_arg;
+}
 
 function showDlg(ev : MouseEvent, dlg_id : string){    
     const dlg = $dlg(dlg_id);
@@ -64,7 +75,7 @@ function makeImgFromNode(map_div : HTMLElement, doc : Doc){
         }
         else{
 
-            firebase_ts.getThumbnailDownloadURL(doc.id).then((url:string)=>{
+            getThumbnailDownloadURL(doc.id).then((url:string)=>{
                 doc.imgURL = url;
                 doc.img!.src = url;
             });
@@ -73,7 +84,7 @@ function makeImgFromNode(map_div : HTMLElement, doc : Doc){
 
     doc.tooltip = document.createElement("span");
     doc.tooltip.className = "tooltip";
-    if(i18n_ts.appMode == i18n_ts.AppMode.edit){
+    if(appMode == AppMode.edit){
         doc.tooltip.innerText = `${doc.id}:${TT(doc.title)}`;
     }
     else{
@@ -259,7 +270,7 @@ export class Graph {
         const db = getDB();
 
         try{
-            let batch = db.batch();
+            let batch = writeBatch(db);
     
             const doc_ref = getDocRef(`${doc.id}`);
             batch.delete(doc_ref);
@@ -537,7 +548,7 @@ export async function updateGraph(){
     }
 
     try{
-        await getDocRef("graph").set(graph_obj);
+        await setDoc(getDocRef("graph"), graph_obj);
         msg(`update graph OK`);
     }
     catch(e){
@@ -568,7 +579,7 @@ export async function addGraphItem(){
     const db = getDB();
 
     try{
-        let batch = db.batch();
+        let batch = writeBatch(db);
 
         const doc_ref = getDocRef(`${doc.id}`);
         batch.set(doc_ref, doc_obj);
@@ -664,7 +675,7 @@ export async function copyAllGraph(){
         throw new MyError("no graph data");
     }
 
-    const docs = new Map<string, firebase.firestore.DocumentData>();
+    const docs = new Map<string, DocumentData>();
     for(const doc_obj of graph_obj.docs){
         const id = `${doc_obj.id}`;
         const doc = await fetchDB(id, defaultRefId);
@@ -685,4 +696,3 @@ export async function copyAllGraph(){
     msg("copyAllGraph completes.")
 }
 
-}

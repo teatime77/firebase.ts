@@ -1,5 +1,7 @@
-namespace firebase_ts {
-export const TT = i18n_ts.TT;
+import { AppMode, appMode, EngTextToId, TT, unique, MyError, msg, $, assert, remove } from "@i18n";
+import { DbDoc, DbFolder } from "../contents";
+import { makeRootFolder, fetchDB, rootFolder, readDocFnc } from "../firebase";
+import { Section, graph, Graph, hideGraph, showGraph, setGraph } from "./graph";
 
 let edge_Map = new Map<string, Edge>();
 let selectedDoc : Doc | null = null;
@@ -64,7 +66,7 @@ async function initGraph() {
 
 async function loadGraph() : Promise<[Doc[], Section[], Map<string, Edge>]>{
     if(rootFolder == null){
-        rootFolder = await makeRootFolder();
+        await makeRootFolder();
     }
 
     let graph_obj = await fetchDB("graph");
@@ -122,11 +124,11 @@ async function loadGraph() : Promise<[Doc[], Section[], Map<string, Edge>]>{
     const docs = Array.from(doc_map.values());
     const sections = Array.from(section_map.values());
 
-    const titles = i18n_ts.unique((docs as (Doc | Section)[]).concat(sections).map(x => x.title));
-    let   idx = Math.max(... i18n_ts.EngTextToId.values()) + 1;
+    const titles = unique((docs as (Doc | Section)[]).concat(sections).map(x => x.title));
+    let   idx = Math.max(... EngTextToId.values()) + 1;
     msg("==============================> titles")
     for(const title of titles){
-        const id = i18n_ts.EngTextToId.get(title);
+        const id = EngTextToId.get(title);
         if(id == undefined){
             msg(`${idx}:${title}`);
             idx++;
@@ -152,7 +154,7 @@ export async function makeDocsGraph(){
 
     const [docs, sections, edge_map] = await loadGraph();
 
-    graph = new Graph(docs, sections, edge_map);
+    setGraph(new Graph(docs, sections, edge_map));
 
     $("remove-from-section").onclick = graph.removeFromSection.bind(graph);
     $("connect-edge").addEventListener("click", graph.connectEdge.bind(graph));
@@ -407,7 +409,7 @@ export class Doc extends MapItem {
     }
 
     makeDot(lines : string[]){
-        if(this.title.startsWith("@") && i18n_ts.appMode != i18n_ts.AppMode.edit){
+        if(this.title.startsWith("@") && appMode != AppMode.edit){
             msg(`skip doc:${this.id} ${this.title}`);
             return;
         }
@@ -535,5 +537,4 @@ export function makeIndexJson(docs : Doc[], sections : Section[], edges : Edge[]
     const text = lines.join("\n");
 
     return text;
-}
 }

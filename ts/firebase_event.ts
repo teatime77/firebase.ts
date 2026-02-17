@@ -1,5 +1,5 @@
-namespace firebase_ts {
-//
+import { $, $dlg } from "@i18n";
+import { SignUp, SignIn, SignOut, SignUpOk, SignInOk, resetPassword } from "./firebase";
 
 export function setEvent(){
     $("firebase-sign-up").addEventListener("click", SignUp);
@@ -21,4 +21,3 @@ export function setEvent(){
 export function showFileDlg(){
 }
 
-}

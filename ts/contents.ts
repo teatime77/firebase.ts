@@ -1,20 +1,10 @@
-namespace firebase_ts {
-//
-type Block = layout_ts.Block;
+import { Firestore, WriteBatch, writeBatch, doc } from 'firebase/firestore';
 
-export const $flex = layout_ts.$flex;
-const $grid = layout_ts.$grid;
-const $block = layout_ts.$block;
-const $button = layout_ts.$button;
-const $popup = layout_ts.$popup;
-const $textarea = layout_ts.$textarea;
-const $label = layout_ts.$label;
-const $input_number = layout_ts.$input_number;
-
-const TT = i18n_ts.TT;
-
-export let rootFolder : DbFolder | null;
-export let urlOrigin : string;
+import { $dlg, MyError, msg, remove, TT } from "@i18n";
+import { $button, $popup, PopupMenu } from "@layout";
+import { batchWrite, writeDB, getDB, user, refId, getUserData, setUserData, getDbData, updateIndex, putDoc, makeRootFolder, getDocRef, urlOrigin, rootFolder, setRootFolder } from "./firebase";
+import { dateString } from "./firebase_util";
+import { getDocObj } from "./graph/graph";
 
 export abstract class DbItem {
     parent : DbFolder | null = null;
@@ -142,8 +132,8 @@ export class DbFolder extends DbItem {
 }
 
 export class BackUp {
-    db : firebase.firestore.Firestore;
-    batch : firebase.firestore.WriteBatch;
+    db : Firestore;
+    batch : WriteBatch;
     date_str : string;
     docIds : number[] = [];
 
@@ -151,13 +141,14 @@ export class BackUp {
         this.db = getDB();
         try{
 
-            this.batch = this.db.batch();
+            // this.db.batch();
+            this.batch = writeBatch(this.db);
         }
         catch(e){
             throw new MyError(`BackUp error: ${e}`);
         }
 
-        this.date_str = firebase_ts.dateString();
+        this.date_str = dateString();
     }
 
     async writeBackUp(doc_id : number, doc_name : string, json_text : string){
@@ -169,7 +160,8 @@ export class BackUp {
 
         try{
             const doc_id_str = `${doc_id}`;
-            const doc_ref = this.db.collection('users').doc(user.uid).collection('backup').doc(this.date_str).collection('docs').doc(doc_id_str);
+            // this.db.collection('users').doc(user.uid).collection('backup').doc(this.date_str).collection('docs').doc(doc_id_str);
+            const doc_ref = doc(this.db, 'users', user.uid, 'backup', this.date_str, 'docs', doc_id_str);
             await this.batch.set(doc_ref, doc_obj);
         }
         catch(e){
@@ -189,7 +181,8 @@ export class BackUp {
         };
 
         try{
-            const index_ref = this.db.collection('users').doc(user.uid).collection('backup').doc(this.date_str).collection('docs').doc("index");
+            // this.db.collection('users').doc(user.uid).collection('backup').doc(this.date_str).collection('docs').doc("index");
+            const index_ref = doc(this.db, 'users', user.uid, 'backup', this.date_str, 'docs', "index");
             await this.batch.set(index_ref, index_obj);
 
             await this.batch.commit();
@@ -228,7 +221,8 @@ export async function* getBackUp(){
         throw new MyError();
     }
 
-    const index_ref = db.collection('users').doc(user.uid).collection('backup').doc(date_str).collection('docs').doc("index");
+    // db.collection('users').doc(user.uid).collection('backup').doc(date_str).collection('docs').doc("index")
+    const index_ref = doc(db, 'users', user.uid, 'backup', date_str, 'docs', "index");
     const index_obj = await getDbData(index_ref);
     if(index_obj == undefined){
         throw new MyError();
@@ -243,7 +237,8 @@ export async function* getBackUp(){
         msg(`doc-Ids : ${docIds}`);
 
         const doc_id_str = `${doc_id}`;
-        const doc_ref = db.collection('users').doc(user.uid).collection('backup').doc(date_str).collection('docs').doc(doc_id_str);
+        // db.collection('users').doc(user.uid).collection('backup').doc(date_str).collection('docs').doc(doc_id_str);
+        const doc_ref = doc(db, 'users', user.uid, 'backup', date_str, 'docs', doc_id_str);
         const doc_obj = await getDbData(doc_ref);
 
         yield doc_obj;
@@ -268,10 +263,10 @@ export function getNewId() : number {
 
 export function makeDoc(parent : DbFolder, name : string, text : string) : DbDoc {
     const id = getNewId();
-    const doc = new DbDoc(parent, id, name, text);
-    parent.addItem(doc);
+    const db_doc = new DbDoc(parent, id, name, text);
+    parent.addItem(db_doc);
 
-    return doc;
+    return db_doc;
 }
 
 export async function addFolder(parent : DbFolder, name : string){
@@ -491,7 +486,7 @@ function makeFolderHtml(item : DbItem, ul : HTMLUListElement, read_doc?:(id:numb
     li.addEventListener("contextmenu", (ev:MouseEvent)=>{
         ev.preventDefault();
 
-        let menu : layout_ts.PopupMenu;
+        let menu : PopupMenu;
         
         if(doc_text != undefined){
 
@@ -580,7 +575,7 @@ function makeFolderHtml(item : DbItem, ul : HTMLUListElement, read_doc?:(id:numb
 
 export async function showContents(read_doc?:(id:number)=>void, doc_text? : string){
     if(rootFolder == null){
-        rootFolder = await makeRootFolder();
+        await makeRootFolder();
     }
 
     const dlg = $dlg("file-dlg");
@@ -590,7 +585,7 @@ export async function showContents(read_doc?:(id:number)=>void, doc_text? : stri
     rootUL = document.createElement("ul");
 
     IdtoItem = new Map<string, DbItem>();
-    makeFolderHtml(rootFolder, rootUL, read_doc, doc_text);
+    makeFolderHtml(rootFolder!, rootUL, read_doc, doc_text);
     dlg.append(rootUL);
 
     dlg.showModal();
@@ -599,10 +594,10 @@ export async function showContents(read_doc?:(id:number)=>void, doc_text? : stri
 
 export async function getRootFolder() : Promise<DbFolder> {
     if(rootFolder == null){
-        rootFolder = await makeRootFolder();
+        await makeRootFolder();
     }
 
-    return rootFolder;
+    return rootFolder!;
 }
 
 
@@ -616,10 +611,10 @@ export async function deleteDocDB(doc : DbDoc){
     }
 
     if(rootFolder == null){
-        rootFolder = await makeRootFolder();
+        await makeRootFolder();
     }
 
-    const root_folder_copy = rootFolder.copy(null);
+    const root_folder_copy = rootFolder!.copy(null);
     const doc_copy = root_folder_copy.findDoc(doc.id);
     if(doc_copy == undefined){
         throw new MyError(`invalid doc id:${doc.id}`);
@@ -633,7 +628,7 @@ export async function deleteDocDB(doc : DbDoc){
     const db = getDB();
 
     try{
-        let batch = db.batch();
+        let batch = writeBatch(db);
 
         const doc_ref = getDocRef(`${doc_copy.id}`);
         batch.delete(doc_ref);
@@ -649,14 +644,12 @@ export async function deleteDocDB(doc : DbDoc){
 
         await batch.commit();
         
-        rootFolder = root_folder_copy;
+        setRootFolder(root_folder_copy);
 
         msg("write doc OK");
     }
     catch(e){
         throw new MyError(`${e}`);
     }        
-
-}
 
 }

@@ -1,8 +1,14 @@
-namespace firebase_ts {
-//
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+
+import { msg, MyError } from "@i18n";
+// import firebase from "./@types/firebase";
+import { refId, urlOrigin, urlBase, app } from "./firebase";
+import { generateRandomString } from "./firebase_util";
+
+declare const firebase: any;
 
 export function initStorage(){
-    const storage = firebase.storage();
+    const storage = getStorage(app);
     msg(`storage:${storage}`);
 }
 
@@ -18,13 +24,15 @@ export async function uploadCanvasImg(doc_id : number, canvas : HTMLCanvasElemen
 
     try{
         // Create a root reference
-        var storageRef = firebase.storage().ref();
+        var storageRef = getStorage(app);
 
         // Create a reference to 'images/mountains.jpg'
         const path = getThumbnailPath(doc_id);
-        var img_ref = storageRef.child(path);
+        // storageRef.child(path);
+        var img_ref = ref(storageRef, path);
 
-        const snap = await img_ref.put(blob);
+        // img_ref.put(blob);
+        const snap = await uploadBytes(img_ref, blob);
         msg(`upload canvas img OK: path:${path}`);
 
         return path;
@@ -41,16 +49,16 @@ export async function uploadImgFile(file : File) {
 
     try{
         // Create a root reference
-        var storageRef = firebase.storage().ref();
+        var storageRef = getStorage(app);
 
         const id = generateRandomString(10);
         const file_name = `${id}.${ext}`;
 
         // Create a reference to 'images/mountains.jpg'
         const path = `users/${refId}/images/${file_name}`;
-        var img_ref = storageRef.child(path);
+        var img_ref = ref(storageRef, path);
 
-        const snap = await img_ref.put(file);
+        const snap = await uploadBytes(img_ref, file);
         msg(`upload OK: ${file.name}:${file_name} path:${path}`);
 
         return path;
@@ -63,8 +71,8 @@ export async function uploadImgFile(file : File) {
 export async function getStorageDownloadURL(path : string){   
     let url : string;
     try{
-        const file_ref = firebase.storage().ref().child(path);
-        url = await file_ref.getDownloadURL();
+        const file_ref = ref(getStorage(app), path);
+        url = await getDownloadURL(file_ref);
         if(typeof url == "string"){
             msg(`storage url:[${url}]`);
             return url;
@@ -87,8 +95,7 @@ export async function getThumbnailDownloadURL(doc_id : number) : Promise<string>
     }
     catch(e){
         msg(`no thumbnail:${path} ${e}`);
-        return `${urlOrigin}/lib/plane/img/blank.png`;
+        return `${urlBase}/lib/plane/img/blank.png`;
     }
 }
 
-}

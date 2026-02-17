@@ -25,3 +25,4 @@ firestore.rules
 public/lesson.html
 public/webgpu.html
 public/diagram.html
+public/lib/tsconfig.tsbuildinfo

@@ -1,18 +1,42 @@
-namespace firebase_ts {
-//
-//
 // https://github.com/firebase/firebase-js-sdk をクローン
-// firebase-js-sdk/packages/firebase/index.d.ts を firebase.d.tsにリネームする。
-let db: firebase.firestore.Firestore;
 
-let app  : firebase.app.App;
-export let user : firebase.User | null = null;
+// パッケージ名を直接指定する（これが標準的な方法）
+
+import { FirebaseApp, initializeApp } from 'firebase/app';
+import { getFirestore, Firestore, writeBatch, doc, getDoc, setDoc, DocumentReference, DocumentData } from 'firebase/firestore';
+import { getAuth, User, createUserWithEmailAndPassword, Auth, signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
+
+import firebase from 'firebase/compat/app';
+
+import { MyError, msg, $dlg, $inp, sleep, parseURL, appMode, AppMode } from "@i18n";
+// import firebase from "./@types/firebase";
+import { DbFolder, makeContents, DbDoc, inputDocName, makeDoc } from "./contents";
+import { setEvent } from "./firebase_event";
+import { generateRandomString } from "./firebase_util";
+import { initStorage } from "./storage";
+
+// firebase-js-sdk/packages/firebase/index.d.ts を firebase.d.tsにリネームする。
+let db: Firestore;
+let auth : Auth;
+
+// let app  : firebase.app.App;
+export let app: FirebaseApp;
+
+export let user : User | null = null;
 export const defaultRefId = "KDxW7CoFYGYpmlON"; // "ZsPosM7CtPqEYgWz" "rts6BilvSSyWqLwD"; // "aNv8XFLZddFpYNoB";
 export let refId : string | undefined = defaultRefId;
+export let urlOrigin : string;
+export let urlBase   : string;
+export let rootFolder : DbFolder | null;
+export let readDocFnc : (id : number) => Promise<void>;
 
 let default_user_id = "1";
 
-export async function makeRootFolder() : Promise<DbFolder> {
+export function setRootFolder(root_folder : DbFolder){
+    rootFolder = root_folder;
+}
+
+export async function makeRootFolder(){
     let obj = await fetchDB("index");
     if(obj == undefined){
 
@@ -46,10 +70,10 @@ export async function makeRootFolder() : Promise<DbFolder> {
 
     // msg(`fetch index: ver.${obj.version}  ${JSON.stringify(root_folder.makeIndex(), null, "\t")}`);
 
-    return root_folder;
+    rootFolder = root_folder;
 }
 
-async function setUser(user_arg : firebase.User | null){
+async function setUser(user_arg : User | null){
     if(user_arg == null){
         throw new MyError();
     }
@@ -65,13 +89,13 @@ export function SignUpOk(){
 
     msg(`email:${email} password:${password}`)
 
-    firebase.auth().createUserWithEmailAndPassword(email, password)
-    .then((userCredential) => {
+    createUserWithEmailAndPassword(auth, email, password)
+    .then((userCredential:any) => {
         // Signed in 
         setUser(userCredential.user);
         $dlg('sign-up').close();
     })
-    .catch((error) => {
+    .catch((error:any) => {
         msg(`sign up err:${error.code} ${error.message}`);
         $dlg('sign-up').close();
     });
@@ -83,13 +107,13 @@ export function SignInOk(){
 
     msg(`email:${email} password:${password}`)
 
-    firebase.auth().signInWithEmailAndPassword(email, password)
-    .then((userCredential) => {
+    signInWithEmailAndPassword(auth, email, password)
+    .then((userCredential:any) => {
         // Signed in
         setUser(userCredential.user);
         $dlg('sign-in').close();
     })
-    .catch((error) => {
+    .catch((error:any) => {
         msg(`sign in err:${error.code} ${error.message}`);
         $dlg('sign-in').close();
     });    
@@ -98,11 +122,11 @@ export function SignInOk(){
 
 export function resetPassword() {
     const email   = $inp("sign-in-e-mail").value.trim();
-    firebase.auth().sendPasswordResetEmail(email)
+    sendPasswordResetEmail(auth, email)
     .then(() => {
         msg("Password reset email sent!")
     })
-    .catch((error) => {
+    .catch((error:any) => {
         msg(`reset password err:${error.code} ${error.message}`);
         $dlg('sign-in').close();
     });
@@ -117,14 +141,13 @@ export function SignIn(){
 }
 
 export async function SignOut(){
-    const auth = firebase.auth();
     msg(`auth:${auth}`);
-    await firebase.auth().signOut();
+    await auth.signOut();
     msg("sign out done");
 }
 
 export async function initFirebase() {
-    [ urlOrigin, , ] = i18n_ts.parseURL();
+    [ urlOrigin, , , urlBase] = parseURL();
 
     setEvent();
 
@@ -140,22 +163,15 @@ export async function initFirebase() {
         measurementId: "G-0ZXZKCWJ2Z"
     };
 
-    // Initialize Firebase
-    // Firebase App named '[DEFAULT]' already exists - Stack Overflow
-    //      https://stackoverflow.com/questions/43331011/firebase-app-named-default-already-exists-app-duplicate-app
-    if (firebase.apps.length === 0){
-        app = firebase.initializeApp(firebaseConfig);
-    }
-    else{
-        app = firebase.app();
-    }
+    app = initializeApp(firebaseConfig);
+    auth = getAuth();
 
-    db = firebase.firestore();
+    db = getFirestore(app);
 
     console.log(app);
 
     let db_is_ready = false;
-    firebase.auth().onAuthStateChanged((user_arg : firebase.User | null) => {
+    getAuth().onAuthStateChanged((user_arg : User | null) => {
         if(user_arg != null){
             setUser(user_arg);
         }
@@ -206,12 +222,23 @@ export async function initFirebase() {
     initStorage();
 }
 
+export function initForMovie(fnc : (id : number) => Promise<void>){
+    readDocFnc = fnc;
+
+
+    if(appMode == AppMode.lessonPlay){
+        refId = "wutfxujVE0GGD5YW";
+        msg(`set ref-ID:[${refId}]`);
+    }
+}
+
 export function getDocRef(id : string, ref_id = refId){
     if(ref_id == undefined){
         throw new MyError();
     }
 
-    return db.collection('public').doc(ref_id).collection('docs').doc(id);
+    return doc(db, 'public', ref_id, 'docs', id);
+    // return db.collection('public').doc(ref_id).collection('docs').doc(id);
 }
 
 
@@ -222,7 +249,8 @@ export async function writeDB(id: string, doc_obj: any){
 
     try{
         // msg(`text:${doc_obj.text}`);
-        await getDocRef(id).set(doc_obj);
+        const doc_ref = getDocRef(id);
+        await setDoc(doc_ref, doc_obj);
         msg(`write DB :id:${doc_obj.id} name:${doc_obj.name}`);
     }
     catch(e){
@@ -237,7 +265,9 @@ export async function setUserData(user_data: any){
     }
 
     try{
-        await db.collection('users').doc(user.uid).set(user_data);
+        // db.collection('users').doc(user.uid).set(user_data);
+        const doc_ref = doc(db, 'users', user.uid);
+        await setDoc(doc_ref, user_data);
         msg(`set user data : ${JSON.stringify(user_data, null, 4)}`);
     }
     catch(e){
@@ -253,8 +283,9 @@ export async function getUserData() {
     }
 
     try{
-        let user_data = await db.collection('users').doc(user.uid).get();
-        if(user_data.exists){
+        // db.collection('users').doc(user.uid).get()
+        let user_data = await getDoc(doc(db, 'users', user.uid));
+        if(user_data.exists()){
 
             const data = user_data.data();
             msg(`get user data OK:${JSON.stringify(data, null, 4)}`);
@@ -277,8 +308,9 @@ export async function getUserData() {
 
 export async function fetchDB(id: string, ref_id = refId) {
     try{
-        let doc_data = await getDocRef(id, ref_id).get();
-        if(doc_data.exists){
+        // getDocRef(id, ref_id).get();
+        let doc_data = await getDoc( getDocRef(id, ref_id) );
+        if(doc_data.exists()){
             const data = doc_data.data();
             // msg(`read DB OK:${data}`);
             return data;
@@ -301,7 +333,7 @@ export async function fetchDB(id: string, ref_id = refId) {
     }
 }
 
-export async function getDoc(id : number, ref_id = refId){
+export async function getMyDoc(id : number, ref_id = refId){
     const json = await fetchDB(`${id}`, ref_id);
     if(json == undefined){
         msg(`no doc:${id}`);
@@ -332,7 +364,8 @@ export function batchWrite(doc : DbDoc, doc_obj: any) : Promise<DbDoc> {
         else{
 
             try{
-                    let batch = db.batch();
+                    // db.batch()
+                    let batch = writeBatch(db);
 
 
                     // FirebaseError: Function WriteBatch.set() called with invalid data. Data must be an object, but it was: a custom object
@@ -373,7 +406,8 @@ export async function updateIndex() {
     };
 
     try{
-        await getDocRef("index").set(index_obj);
+        // getDocRef("index").set(index_obj);
+        await setDoc(getDocRef("index"), index_obj);
         msg(`update index [${JSON.stringify(index_obj, null, 4)}]`);
     }
     catch(e){
@@ -395,17 +429,17 @@ export async function putDoc(parent : DbFolder, text : string) : Promise<DbDoc |
     return doc;
 }
 
-export function getDB() : firebase.firestore.Firestore {
+export function getDB() : Firestore {
     return db;
 }
 
-export function getUser() : firebase.User | null {
+export function getUser() : User | null {
     return user;
 }
 
-export async function getDbData(doc_ref : firebase.firestore.DocumentReference<firebase.firestore.DocumentData>){
-    const doc_data = await doc_ref.get();
-    if(doc_data.exists){
+export async function getDbData(doc_ref : DocumentReference<DocumentData, DocumentData>){
+    const doc_data = await getDoc(doc_ref);
+    if(doc_data.exists()){
         const data = doc_data.data();
         if(data != undefined){
             return data;
@@ -413,6 +447,4 @@ export async function getDbData(doc_ref : firebase.firestore.DocumentReference<f
     }
 
     throw new MyError();
-}
-
 }
