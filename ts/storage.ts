@@ -95,7 +95,7 @@ export async function getThumbnailDownloadURL(doc_id : number) : Promise<string>
     }
     catch(e){
         msg(`no thumbnail:${path} ${e}`);
-        return `${urlBase}/lib/plane/img/blank.png`;
+        return `${urlBase}/../plane/images/blank.png`;
     }
 }
 

@@ -290,7 +290,14 @@ export class Doc extends MapItem {
     constructor(id : number, title : string, imgURL : string | undefined){
         super(id, title, undefined);
         if(imgURL != undefined){
-            this.imgURL = imgURL;
+            if(imgURL.includes("blank.png")){
+                msg("blank png:${imgURL}");
+                this.imgURL = `../plane/images/blank.png`;
+            }
+            else{
+
+                this.imgURL = imgURL;
+            }
         }
     }
     
