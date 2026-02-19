@@ -28,3 +28,4 @@ public/diagram.html
 public/lib/tsconfig.tsbuildinfo
 dist
 tsconfig.tsbuildinfo
+lib
